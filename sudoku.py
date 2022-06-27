@@ -67,32 +67,28 @@ def solve_sudoku(board, rec_depth):
 
     while "0" in board:
         changed = False
+        lowest = {"position": 0, "count": 9, "values": {}}
         for i, n in enumerate(board):
             if n != "0":
                 continue
             available = defn[i][0] & defn[i][1] & defn[i][2]
-            if len(available) == 0:
+            available_count = len(available)
+            if available_count == 0:
                 return False
-            if len(available) == 1:
+            if available_count == 1:
                 board[i] = available.pop()
                 if "0" not in board:
                     return board
                 changed = True
                 update_available(i, board[i], defn)
+            elif available_count < lowest["count"]:
+                lowest["count"] = available_count
+                lowest["position"] = i
+                lowest["values"] = available.copy()
         if changed is False:
-            current_lowest = 9
-            lowest_pos = 0
-            # find position on board with lowest number of alternatives
-            for i, n in enumerate(board):
-                if n == "0":
-                    available = defn[i][0] & defn[i][1] & defn[i][2]
-                    if len(available) < current_lowest:
-                        current_lowest = len(available)
-                        lowest_pos = i
-                        lowest_available = available.copy()
             # try each alternative in turn
-            for test_num in lowest_available:
-                board[lowest_pos] = test_num
+            for test_num in lowest["values"]:
+                board[lowest["position"]] = test_num
                 if solved_bd := solve_sudoku(board.copy(), rec_depth+1):
                     return solved_bd
             return False
