@@ -47,7 +47,7 @@ def solve_sudoku(board, rec_depth):
     c = [{str(n) for n in range(1, 10)} for _ in range(9)]
     s = [{str(n) for n in range(1, 10)} for _ in range(9)]
 
-    # define the rows, columns, and squares that apply to each cell
+    # define which rows, columns, and squares apply to each cell
     defn_str = """000 010 020   031 041 051   062 072 082
                   100 110 120   131 141 151   162 172 182
                   200 210 220   231 241 251   262 272 282
@@ -59,6 +59,7 @@ def solve_sudoku(board, rec_depth):
                   606 616 626   637 647 657   668 678 688
                   706 716 726   737 747 757   768 778 788
                   806 816 826   837 847 857   868 878 888"""
+    # convert the string into the format (({row}, {col}, {sq}), ...)
     defn = [(r[int(x)], c[int(y)], s[int(z)]) for x, y, z in defn_str.split()]
     defn = tuple(defn)
 
@@ -71,11 +72,14 @@ def solve_sudoku(board, rec_depth):
         for i, n in enumerate(board):
             if n != "0":
                 continue
+            # looking for positions where there is only one availble
+            # value left (because the others are in the same row,
+            # column, or square)
             available = defn[i][0] & defn[i][1] & defn[i][2]
             available_count = len(available)
-            if available_count == 0:
+            if available_count == 0:  # must be an invalid board
                 return False
-            if available_count == 1:
+            if available_count == 1:  # must be that number in this position
                 board[i] = available.pop()
                 if "0" not in board:
                     return board
@@ -86,12 +90,15 @@ def solve_sudoku(board, rec_depth):
                 lowest["position"] = i
                 lowest["values"] = available.copy()
         if changed is False:
-            # try each alternative in turn
+            # try each possible alternative value in turn
+            # using the board position with fewest alternatives
+            # to reduce the amount of recursion
             for test_num in lowest["values"]:
                 board[lowest["position"]] = test_num
                 if solved_bd := solve_sudoku(board.copy(), rec_depth+1):
                     return solved_bd
             return False
+
 
 def main():
     REPS = 20
