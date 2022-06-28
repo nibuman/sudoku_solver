@@ -1,9 +1,11 @@
+__version__ = "1.2"
+
 import time
 
 difficulty_score = 0
 
 
-def display_board(board_list):
+def display_board(board_list: list) -> None:
     """Prints Sudoku board in readable format"""
     board = "".join(board_list)
     for a in range(0, 81, 27):
@@ -14,7 +16,7 @@ def display_board(board_list):
         print(" ")
 
 
-def update_available(i, n, cell_defn):
+def update_available(i: int, n: str, cell_defn: tuple) -> None:
     """Update rows, columns and squares by removing unavailable numbers"""
     for j in range(3):
         cell_defn[i][j].discard(n)
@@ -30,7 +32,7 @@ def clean_string(board_string):
     return board_list
 
 
-def solve_sudoku(board, rec_depth):
+def solve_sudoku(board: list, rec_depth: int, use_alg2: bool = True) -> list:
     """Try to solve any Sudoku board, needs to be called for each guess
 
     - Iterates through every cell
@@ -46,6 +48,9 @@ def solve_sudoku(board, rec_depth):
     r = [{str(n) for n in range(1, 10)} for _ in range(9)]
     c = [{str(n) for n in range(1, 10)} for _ in range(9)]
     s = [{str(n) for n in range(1, 10)} for _ in range(9)]
+    r1 = [[[] for _ in range(10)] for _ in range(9)]
+    c1 = [[[] for _ in range(10)] for _ in range(9)]
+    s1 = [[[] for _ in range(10)] for _ in range(9)]
 
     # define which rows, columns, and squares apply to each cell
     defn_str = """000 010 020   031 041 051   062 072 082
@@ -59,14 +64,21 @@ def solve_sudoku(board, rec_depth):
                   606 616 626   637 647 657   668 678 688
                   706 716 726   737 747 757   768 778 788
                   806 816 826   837 847 857   868 878 888"""
-    # convert the string into the format (({row}, {col}, {sq}), ...)
-    defn = [(r[int(x)], c[int(y)], s[int(z)]) for x, y, z in defn_str.split()]
+    # format string as (({row}, {col}, {sq}, [r1], [c1], [s1]),...)
+    defn = [(r[int(x)], c[int(y)], s[int(z)],
+            r1[int(x)], c1[int(y)], s1[int(z)])
+            for x, y, z in defn_str.split()]
     defn = tuple(defn)
 
     for i, n in enumerate(board):
         update_available(i, n, defn)
 
     while "0" in board:
+        for i in range(9):
+            for j in range(10):
+                r1[i][j].clear()
+                c1[i][j].clear()
+                s1[i][j].clear()
         changed = False
         lowest = {"position": 0, "count": 9, "values": {}}
         for i, n in enumerate(board):
@@ -77,6 +89,10 @@ def solve_sudoku(board, rec_depth):
             # column, or square)
             available = defn[i][0] & defn[i][1] & defn[i][2]
             available_count = len(available)
+            for number in available:
+                defn[i][3][int(number)].append(i)
+                defn[i][4][int(number)].append(i)
+                defn[i][5][int(number)].append(i)
             if available_count == 0:  # must be an invalid board
                 return False
             if available_count == 1:  # must be that number in this position
@@ -89,50 +105,49 @@ def solve_sudoku(board, rec_depth):
                 lowest["count"] = available_count
                 lowest["position"] = i
                 lowest["values"] = available.copy()
+        # run the second algorithm - each row, col, sq must have 1 of
+        # all 9 numbers. Cannot run if there have been changes made as
+        # r1, c1, and s1 will not be up-to-date
+        if changed is False and use_alg2 is True:
+            for row in (r1 + c1 + s1):
+                for pos, available_pos in enumerate(row):
+                    if len(available_pos) == 1:
+                        board[available_pos[0]] = str(pos)
+                        if "0" not in board:
+                            return board
+                        changed = True
+                        update_available(available_pos[0], str(pos), defn)
+
         if changed is False:
             # try each possible alternative value in turn
             # using the board position with fewest alternatives
             # to reduce the amount of recursion
             for test_num in lowest["values"]:
                 board[lowest["position"]] = test_num
-                if solved_bd := solve_sudoku(board.copy(), rec_depth+1):
+                if solved_bd := solve_sudoku(board.copy(), rec_depth+1, use_alg2):
                     return solved_bd
             return False
 
 
 def main():
-    REPS = 20
     global difficulty_score
 
-    solve_time = []
-    solve_difficulty = []
-
-    vals = input("Sudoku string: ")
-
-    board_list = clean_string(vals)
+    sudoku_input = input("Sudoku string: ")
+    board_list = clean_string(sudoku_input)
     if len(board_list) != 81:
         print("Sudoko board is 81 characters, board has ", len(board_list))
         exit()
-    display_board(board_list)
     print("Original board")
+    display_board(board_list)
 
-    for n in range(REPS):
-        new_board_list = board_list.copy()
-        t1 = time.time()
-        if solved_board := solve_sudoku(new_board_list, 0):
-            t2 = time.time()
-            solve_time.append(t2-t1)
-            solve_difficulty.append(difficulty_score)
-            difficulty_score = 0
-
-        else:
-            print("Too hard")
-
-    print("\n\nSolved Board\n")
+    t1 = time.time()
+    if solved_board := solve_sudoku(board_list, 0, False):
+        t2 = time.time()
+    else:
+        print("Too hard")
+    print("Solved board")
     display_board(solved_board)
-    print("".join(solved_board))
-    print("Execution time = ", sum(solve_time) / len(solve_time))
-    print("Diffulty = ", sum(solve_difficulty) / len(solve_difficulty))
+    print(f'Solved in {t2-t1:8.5f} ms with difficulty {difficulty_score}')
 
 
 if __name__ == "__main__":
