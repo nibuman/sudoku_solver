@@ -147,6 +147,7 @@ def main():
         print("Too hard")
     print("Solved board")
     display_board(solved_board)
+    print("".join(solved_board))
     print(f'Solved in {t2-t1:8.5f} ms with difficulty {difficulty_score}')
 
 
