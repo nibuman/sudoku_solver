@@ -1,6 +1,7 @@
 __version__ = "2.0"
 
 import time
+import copy
 
 difficulty_score = 0
 
@@ -34,7 +35,6 @@ def clean_string(board_string):
 
 def solve_sudoku(board: list, rec_depth: int, use_alg2: bool = True) -> list:
     """Try to solve any Sudoku board, needs to be called for each guess
-
     - Iterates through every cell
     - Removes any values already used in each row, column or square
     - If only one value possible for a cell - then assign that
@@ -46,11 +46,15 @@ def solve_sudoku(board: list, rec_depth: int, use_alg2: bool = True) -> list:
 
     # lists of sets of available numbers by row, column or square
     r = [{str(n) for n in range(1, 10)} for _ in range(9)]
-    c = [{str(n) for n in range(1, 10)} for _ in range(9)]
-    s = [{str(n) for n in range(1, 10)} for _ in range(9)]
+    c = copy.deepcopy(r)
+    s = copy.deepcopy(r)
+    # c = [{str(n) for n in range(1, 10)} for _ in range(9)]
+    # s = [{str(n) for n in range(1, 10)} for _ in range(9)]
     r1 = [[[] for _ in range(10)] for _ in range(9)]
-    c1 = [[[] for _ in range(10)] for _ in range(9)]
-    s1 = [[[] for _ in range(10)] for _ in range(9)]
+    c1 = copy.deepcopy(r1)
+    s1 = copy.deepcopy(r1)
+    # c1 = [[[] for _ in range(10)] for _ in range(9)]
+    # s1 = [[[] for _ in range(10)] for _ in range(9)]
 
     # define which rows, columns, and squares apply to each cell
     defn_str = """000 010 020   031 041 051   062 072 082
@@ -124,7 +128,9 @@ def solve_sudoku(board: list, rec_depth: int, use_alg2: bool = True) -> list:
             # to reduce the amount of recursion
             for test_num in lowest["values"]:
                 board[lowest["position"]] = test_num
-                if solved_bd := solve_sudoku(board.copy(), rec_depth+1, use_alg2):
+                if solved_bd := solve_sudoku(board.copy(),
+                   rec_depth+1,
+                   use_alg2):
                     return solved_bd
             return False
 

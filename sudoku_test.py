@@ -3,6 +3,7 @@ import sudoku
 import csv
 import time
 
+
 class SudokuSolverTest(unittest.TestCase):
 
     def test_clean_string(self):
@@ -11,7 +12,7 @@ class SudokuSolverTest(unittest.TestCase):
         self.assertEqual(list("1234567890"), test_result)
 
     def test_sudoku_01(self):
-        test_input, correct_result = (
+        test_input, _ = (
             "003020600900305001001806400"
             "008102900700000008006708200"
             "002609500800203009005010300",
@@ -21,7 +22,7 @@ class SudokuSolverTest(unittest.TestCase):
         self.run_sudoku_solver(test_input)
 
     def test_sudoku_02(self):
-        test_input, correct_result = (
+        test_input, _ = (
             "005306078200407005000009106"
             "008002034040030010130700500"
             "709800000800604001450203600",
@@ -31,7 +32,7 @@ class SudokuSolverTest(unittest.TestCase):
         self.run_sudoku_solver(test_input)
 
     def test_sudoku_03(self):
-        test_input, correct_result = (
+        test_input, _ = (
             "069800500000000103400000020"
             "000170000080006000307020004"
             "000040200630000000850000000",
@@ -41,7 +42,7 @@ class SudokuSolverTest(unittest.TestCase):
         self.run_sudoku_solver(test_input)
 
     def test_sudoku_04(self):
-        test_input, correct_result = (
+        test_input, _ = (
             "006080300049070250000405000"
             "600317004007000800100826009"
             "000702000075040190003090600",
@@ -51,7 +52,7 @@ class SudokuSolverTest(unittest.TestCase):
         self.run_sudoku_solver(test_input)
 
     def test_sudoku_05(self):
-        test_input, correct_result = (
+        test_input, _ = (
             "800000000003600000070090200"
             "050007000000045700000100030"
             "001000068008500010090000400",
@@ -61,7 +62,7 @@ class SudokuSolverTest(unittest.TestCase):
         self.run_sudoku_solver(test_input)
 
     def test_sudoku_06(self):
-        test_input, correct_result = (
+        test_input, _ = (
             "005300000800000020070010500"
             "400005300010070006003200080"
             "060500009004000030000009700",
@@ -71,7 +72,7 @@ class SudokuSolverTest(unittest.TestCase):
         self.run_sudoku_solver(test_input)
 
     def test_sudoku_07(self):
-        test_input, correct_result = (
+        test_input, _ = (
             "000007000100000000000430200"
             "000000006000509000000000418"
             "000081000002000050040000300",
@@ -81,7 +82,7 @@ class SudokuSolverTest(unittest.TestCase):
         self.run_sudoku_solver(test_input)
 
     def test_sudoku_08(self):
-        test_input, correct_result = (
+        test_input, _ = (
             "000000000000003085001020000"
             "000507000004000100090000000"
             "500000073002010000000040009",
@@ -104,8 +105,6 @@ class SudokuSolverTest(unittest.TestCase):
         for invalid_board in invalid_boards:
             result = self.check_valid_sudoku(invalid_board, False)
             self.assertEqual("Fail", result)
-
-
 
     def run_sudoku_solver(self, test_input):
         """Runs the 'solve_sudoku' method - in separate method
