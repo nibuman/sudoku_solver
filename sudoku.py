@@ -2,8 +2,59 @@ __version__ = "2.11"
 
 import time
 import copy
+from unittest import result
 
 difficulty_score = 0
+
+
+class BoardDefinition():
+
+    def __init__(self) -> None:
+        # lists of sets of available numbers by row, column or square
+        self.r = [{str(n) for n in range(1, 10)} for _ in range(9)]
+        self.c = copy.deepcopy(self.r)
+        self.s = copy.deepcopy(self.r)
+        self.r1 = [[[] for _ in range(10)] for _ in range(9)]
+        self.c1 = copy.deepcopy(self.r1)
+        self.s1 = copy.deepcopy(self.r1)
+
+        # define which rows, columns, and squares apply to each cell
+        defn_str = """000 010 020   031 041 051   062 072 082
+                    100 110 120   131 141 151   162 172 182
+                    200 210 220   231 241 251   262 272 282
+
+                    303 313 323   334 344 354   365 375 385
+                    403 413 423   434 444 454   465 475 485
+                    503 513 523   534 544 554   565 575 585
+
+                    606 616 626   637 647 657   668 678 688
+                    706 716 726   737 747 757   768 778 788
+                    806 816 826   837 847 857   868 878 888"""
+        # format string as (({row}, {col}, {sq}, [r1], [c1], [s1]),...)
+        self.defn = tuple(
+                            [(self.r[int(x)],
+                              self.c[int(y)],
+                              self.s[int(z)],
+                              self.r1[int(x)],
+                              self.c1[int(y)],
+                              self.s1[int(z)])
+                             for x, y, z in defn_str.split()]
+                          )
+
+    def get_rcs(self, cell: int) -> tuple:
+        """Returns the row, column and square for a particular cell
+        """
+        all_rcs = [self.defn[cell][rcs] for rcs in range(6)]
+        for rcs in all_rcs:
+            print(id(rcs))
+        return tuple(all_rcs)
+
+    def reset_a_rcs(self) -> None:
+        for i in range(9):
+            for j in range(10):
+                self.r1[i][j].clear()
+                self.c1[i][j].clear()
+                self.s1[i][j].clear()
 
 
 def display_board(board_list: list) -> None:
@@ -16,10 +67,12 @@ def display_board(board_list: list) -> None:
         print(" ")
 
 
-def update_available(board_pos: int, number: str, cell_defn: tuple) -> None:
+def update_available(board_pos: int, number: str, cell_defn: BoardDefinition) -> None:
     """Update rows, columns and squares by removing unavailable numbers"""
-    for j in range(3):
-        cell_defn[board_pos][j].discard(number)
+    row, column, square, *_ = cell_defn.get_rcs(board_pos)
+    row.discard(number)
+    column.discard(number)
+    square.discard(number)
 
 
 def clean_string(board_string: str) -> list:
@@ -74,79 +127,53 @@ def solve_sudoku(board: list, rec_depth: int, use_alg2: bool = True) -> list:
     """
     global difficulty_score
     difficulty_score += 1
+    board_definition = BoardDefinition()
 
-    # lists of sets of available numbers by row, column or square
-    r = [{str(n) for n in range(1, 10)} for _ in range(9)]
-    c = copy.deepcopy(r)
-    s = copy.deepcopy(r)
-    r1 = [[[] for _ in range(10)] for _ in range(9)]
-    c1 = copy.deepcopy(r1)
-    s1 = copy.deepcopy(r1)
-
-    # define which rows, columns, and squares apply to each cell
-    defn_str = """000 010 020   031 041 051   062 072 082
-                  100 110 120   131 141 151   162 172 182
-                  200 210 220   231 241 251   262 272 282
-
-                  303 313 323   334 344 354   365 375 385
-                  403 413 423   434 444 454   465 475 485
-                  503 513 523   534 544 554   565 575 585
-
-                  606 616 626   637 647 657   668 678 688
-                  706 716 726   737 747 757   768 778 788
-                  806 816 826   837 847 857   868 878 888"""
-    # format string as (({row}, {col}, {sq}, [r1], [c1], [s1]),...)
-    defn = tuple([(r[int(x)], c[int(y)], s[int(z)],
-                  r1[int(x)], c1[int(y)], s1[int(z)])
-                  for x, y, z in defn_str.split()])
-
-    for i, n in enumerate(board):
-        update_available(i, n, defn)
+    for position, number in enumerate(board):
+        update_available(position, number, board_definition)
+    
 
     while "0" in board:
-        for i in range(9):
-            for j in range(10):
-                r1[i][j].clear()
-                c1[i][j].clear()
-                s1[i][j].clear()
+        board_definition.reset_a_rcs()
         changed = False
         lowest = {"position": 0, "count": 9, "values": {}}
-        for i, n in enumerate(board):
-            if n != "0":
+        for position, number in enumerate(board):
+            if number != "0":
                 continue
             # looking for positions where there is only one availble
             # value left (because the others are in the same row,
             # column, or square)
-            available = defn[i][0] & defn[i][1] & defn[i][2]
+            row, column, square, a_row, a_column, a_square = board_definition.get_rcs(position)
+            available = row & column & square  # Set operation
             available_count = len(available)
             for number in available:
-                defn[i][3][int(number)].append(i)
-                defn[i][4][int(number)].append(i)
-                defn[i][5][int(number)].append(i)
+                a_row[int(number)].append(position)
+                a_column[int(number)].append(position)
+                a_square[int(number)].append(position)
             if available_count == 0:  # must be an invalid board
                 return False
             if available_count == 1:  # must be that number in this position
-                board[i] = available.pop()
+                board[position] = available.pop()
                 if "0" not in board:
                     return board
                 changed = True
-                update_available(i, board[i], defn)
+                update_available(position, board[position], board_definition)
             elif available_count < lowest["count"]:
                 lowest["count"] = available_count
-                lowest["position"] = i
+                lowest["position"] = position
                 lowest["values"] = available.copy()
         # run the second algorithm - each row, col, sq must have 1 of
         # all 9 numbers. Cannot run if there have been changes made as
         # r1, c1, and s1 will not be up-to-date
         if changed is False and use_alg2 is True:
-            for row in (r1 + c1 + s1):
+            for row in (board_definition.r1 + board_definition.c1 + board_definition.s1):
                 for pos, available_pos in enumerate(row):
                     if len(available_pos) == 1:
                         board[available_pos[0]] = str(pos)
                         if "0" not in board:
                             return board
                         changed = True
-                        update_available(available_pos[0], str(pos), defn)
+                        update_available(available_pos[0], str(pos), board_definition)
 
         if changed is False:
             # try each possible alternative value in turn
