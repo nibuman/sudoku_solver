@@ -2,7 +2,7 @@ __version__ = "2.11"
 
 import time
 import copy
-from unittest import result
+import json
 
 difficulty_score = 0
 
@@ -45,8 +45,6 @@ class BoardDefinition():
         """Returns the row, column and square for a particular cell
         """
         all_rcs = [self.defn[cell][rcs] for rcs in range(6)]
-        for rcs in all_rcs:
-            print(id(rcs))
         return tuple(all_rcs)
 
     def reset_a_rcs(self) -> None:
@@ -64,24 +62,47 @@ def display_board(board_list: list) -> None:
         for b in range(0, 27, 9):
             n = a + b
             print(board[n:n+3], " ", board[n+3:n+6], " ", board[n+6:n+9])
-        print(" ")
+        print("\n")
 
 
 def update_available(board_pos: int, number: str, cell_defn: BoardDefinition) -> None:
     """Update rows, columns and squares by removing unavailable numbers"""
-    row, column, square, *_ = cell_defn.get_rcs(board_pos)
+    row, column, square, a_row, a_col, a_sqr = cell_defn.get_rcs(board_pos)
     row.discard(number)
     column.discard(number)
     square.discard(number)
+    # for i in range(10):
+    #     if board_pos in a_row[i]:
+    #         a_row[i].remove(board_pos)
+    #     if board_pos in a_col[i]:
+    #         a_col[i].remove(board_pos)
+    #     if board_pos in a_sqr[i]:
+    #         a_sqr[i].remove(board_pos)
 
 
-def clean_string(board_string: str) -> list:
+def valid_string(board_string: str) -> list:
     """Reformats a text string as a valid board definition
     - will remove any characters that are not 0-9
+    - Strings starting with 'sud' interpreted as a standard test
+      Sudoku from sudoku_test.py numbered 01-99 that it then retrieves
+      e.g. sud01 runs the same board as test_sudoku_01
     """
+    if board_string[0:3] == "sud":
+        board_string = get_test_sudokus(int(board_string[3:5])-1)
     allowed_vals = {str(n) for n in range(10)}
     board_list = [n for n in board_string if n in allowed_vals]
+    if len(board_list) != 81:
+        return False
     return board_list
+
+
+def get_test_sudokus(puzzle_num: int) -> str:
+    """Retrieves the test Sudoku boards from the config file
+    """
+    assert 0 <= puzzle_num < 7, f'Test Sudoku must be 01-07, {puzzle_num} given.'
+    with open('./sudoku_data.json', 'r') as f:
+        config_data = json.load(f)
+    return config_data["sudoku_puzzle"][puzzle_num]["question"]
 
 
 def check_valid_sudoku(board: list) -> bool:
@@ -117,7 +138,7 @@ def check_valid_sudoku(board: list) -> bool:
     return True
 
 
-def solve_sudoku(board: list, rec_depth: int, use_alg2: bool = True) -> list:
+def solve_sudoku(board: list, alg2: bool = True) -> list:
     """Try to solve any Sudoku board, needs to be called for each guess
     - Iterates through every cell
     - Removes any values already used in each row, column or square
@@ -131,7 +152,6 @@ def solve_sudoku(board: list, rec_depth: int, use_alg2: bool = True) -> list:
 
     for position, number in enumerate(board):
         update_available(position, number, board_definition)
-    
 
     while "0" in board:
         board_definition.reset_a_rcs()
@@ -143,13 +163,13 @@ def solve_sudoku(board: list, rec_depth: int, use_alg2: bool = True) -> list:
             # looking for positions where there is only one availble
             # value left (because the others are in the same row,
             # column, or square)
-            row, column, square, a_row, a_column, a_square = board_definition.get_rcs(position)
-            available = row & column & square  # Set operation
+            row, col, sqr, a_row, a_col, a_sqr = board_definition.get_rcs(position)
+            available = row & col & sqr  # Set operation
             available_count = len(available)
             for number in available:
                 a_row[int(number)].append(position)
-                a_column[int(number)].append(position)
-                a_square[int(number)].append(position)
+                a_col[int(number)].append(position)
+                a_sqr[int(number)].append(position)
             if available_count == 0:  # must be an invalid board
                 return False
             if available_count == 1:  # must be that number in this position
@@ -165,7 +185,7 @@ def solve_sudoku(board: list, rec_depth: int, use_alg2: bool = True) -> list:
         # run the second algorithm - each row, col, sq must have 1 of
         # all 9 numbers. Cannot run if there have been changes made as
         # r1, c1, and s1 will not be up-to-date
-        if changed is False and use_alg2 is True:
+        if changed is False and alg2 is True:
             for row in (board_definition.r1 + board_definition.c1 + board_definition.s1):
                 for pos, available_pos in enumerate(row):
                     if len(available_pos) == 1:
@@ -182,8 +202,7 @@ def solve_sudoku(board: list, rec_depth: int, use_alg2: bool = True) -> list:
             for test_num in lowest["values"]:
                 board[lowest["position"]] = test_num
                 if solved_bd := solve_sudoku(board.copy(),
-                   rec_depth+1,
-                   use_alg2):
+                   alg2):
                     return solved_bd
             return False
 
@@ -192,23 +211,23 @@ def main():
     global difficulty_score
 
     sudoku_input = input("Sudoku string: ")
-    board_list = clean_string(sudoku_input)
-    if len(board_list) != 81:
-        print("Sudoko board is 81 characters, board has ", len(board_list))
+
+    if not(board_list := valid_string(sudoku_input)):
+        print("Not a valid Sudoku board")
         exit()
     print("Original board")
     display_board(board_list)
 
     t1 = time.time()
-    solved_board = solve_sudoku(board_list, 0, False)
+    solved_board = solve_sudoku(board_list, alg2=True)
     if check_valid_sudoku(solved_board):
         t2 = time.time()
-        print(f'Solved in {t2 - t1:8.5f} ms, difficulty {difficulty_score}')
+        display_board(solved_board)
+        print(f'{"".join(solved_board)}\n'
+              f'Solved in {1000*(t2 - t1):5.1f} ms, '
+              f'difficulty {difficulty_score}')
     else:
         print("Too hard")
-    print("Solved board")
-    display_board(solved_board)
-    print("".join(solved_board))
 
 
 if __name__ == "__main__":
