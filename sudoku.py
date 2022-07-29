@@ -22,13 +22,46 @@ def update_available(board_pos: int, number: str, cell_defn: tuple) -> None:
         cell_defn[board_pos][j].discard(number)
 
 
-def clean_string(board_string):
+def clean_string(board_string: str) -> list:
     """Reformats a text string as a valid board definition
     - will remove any characters that are not 0-9
     """
     allowed_vals = {str(n) for n in range(10)}
     board_list = [n for n in board_string if n in allowed_vals]
     return board_list
+
+
+def check_valid_sudoku(board: list) -> bool:
+    """ Checks whether sudoku board is valid by definition
+    i.e. is there just one of each digit in each row, column
+    and square
+    """
+
+    valid_set = {str(n) for n in range(1, 10)}
+
+    # check rows are valid
+    for i in range(0, 81, 9):
+        row = set(board[i:i+9])
+        if row != valid_set:
+            print(f'Row {i//9} invalid')
+            return False
+    # check columns are valid
+    for i in range(9):
+        col = set(board[i::9])
+        if col != valid_set:
+            print(f'Column {i} invalid')
+            return False
+    # check squares are valid
+    for i in range(0, 81, 27):
+        for j in range(0, 9, 3):
+            sq = []
+            for k in range(0, 27, 9):
+                sq.extend(board[i+j+k:i+j+k+3])
+            sq = set(sq)
+            if sq != valid_set:
+                print(f'Square {i//9 + j//3} invalid')
+                return False
+    return True
 
 
 def solve_sudoku(board: list, rec_depth: int, use_alg2: bool = True) -> list:
@@ -140,7 +173,8 @@ def main():
     display_board(board_list)
 
     t1 = time.time()
-    if solved_board := solve_sudoku(board_list, 0, False):
+    solved_board = solve_sudoku(board_list, 0, False)
+    if check_valid_sudoku(solved_board):
         t2 = time.time()
         print(f'Solved in {t2 - t1:8.5f} ms, difficulty {difficulty_score}')
     else:
