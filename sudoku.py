@@ -14,9 +14,9 @@ class BoardDefinition():
         self.r = [{str(n) for n in range(1, 10)} for _ in range(9)]
         self.c = copy.deepcopy(self.r)
         self.s = copy.deepcopy(self.r)
-        self.r1 = [[[] for _ in range(10)] for _ in range(9)]
-        self.c1 = copy.deepcopy(self.r1)
-        self.s1 = copy.deepcopy(self.r1)
+        self.alg2_r = [[[] for _ in range(10)] for _ in range(9)]
+        self.alg2_c = copy.deepcopy(self.alg2_r)
+        self.alg2_s = copy.deepcopy(self.alg2_r)
 
         # define which rows, columns, and squares apply to each cell
         defn_str = """000 010 020   031 041 051   062 072 082
@@ -35,9 +35,9 @@ class BoardDefinition():
                             [(self.r[int(x)],
                               self.c[int(y)],
                               self.s[int(z)],
-                              self.r1[int(x)],
-                              self.c1[int(y)],
-                              self.s1[int(z)])
+                              self.alg2_r[int(x)],
+                              self.alg2_c[int(y)],
+                              self.alg2_s[int(z)])
                              for x, y, z in defn_str.split()]
                           )
 
@@ -47,12 +47,24 @@ class BoardDefinition():
         all_rcs = [self.defn[cell][rcs] for rcs in range(6)]
         return tuple(all_rcs)
 
-    def reset_a_rcs(self) -> None:
+    def get_rcs_alg1(self, cell: int) -> tuple:
+        """Returns the row, column and square for a particular cell
+        """
+        alg1_rcs = [self.defn[cell][rcs] for rcs in range(3)]
+        return tuple(alg1_rcs)
+
+    def get_rcs_alg2(self, cell: int) -> tuple:
+        """Returns the row, column and square for a particular cell
+        """
+        alg2_rcs = [self.defn[cell][rcs] for rcs in range(3, 6)]
+        return tuple(alg2_rcs)
+
+    def reset_alg2_rcs(self) -> None:
         for i in range(9):
             for j in range(10):
-                self.r1[i][j].clear()
-                self.c1[i][j].clear()
-                self.s1[i][j].clear()
+                self.alg2_r[i][j].clear()
+                self.alg2_c[i][j].clear()
+                self.alg2_s[i][j].clear()
 
 
 def display_board(board_list: list) -> None:
@@ -65,19 +77,17 @@ def display_board(board_list: list) -> None:
         print("\n")
 
 
-def update_available(board_pos: int, number: str, cell_defn: BoardDefinition) -> None:
+def update_available(board_pos: int,
+                     number: str,
+                     cell_defn: BoardDefinition) -> None:
     """Update rows, columns and squares by removing unavailable numbers"""
-    row, column, square, a_row, a_col, a_sqr = cell_defn.get_rcs(board_pos)
-    row.discard(number)
-    column.discard(number)
-    square.discard(number)
-    # for i in range(10):
-    #     if board_pos in a_row[i]:
-    #         a_row[i].remove(board_pos)
-    #     if board_pos in a_col[i]:
-    #         a_col[i].remove(board_pos)
-    #     if board_pos in a_sqr[i]:
-    #         a_sqr[i].remove(board_pos)
+    for rcs in cell_defn.get_rcs_alg1(board_pos):
+        rcs.discard(number)
+
+    # for rcs in cell_defn.get_rcs_alg2(board_pos):
+    #     for number in rcs:
+    #         if board_pos in number:
+    #             number.remove(board_pos)
 
 
 def valid_string(board_string: str) -> list:
@@ -148,13 +158,13 @@ def solve_sudoku(board: list, alg2: bool = True) -> list:
     """
     global difficulty_score
     difficulty_score += 1
-    board_definition = BoardDefinition()
+    board_def = BoardDefinition()
 
     for position, number in enumerate(board):
-        update_available(position, number, board_definition)
+        update_available(position, number, board_def)
 
     while "0" in board:
-        board_definition.reset_a_rcs()
+        board_def.reset_alg2_rcs()
         changed = False
         lowest = {"position": 0, "count": 9, "values": {}}
         for position, number in enumerate(board):
@@ -163,13 +173,13 @@ def solve_sudoku(board: list, alg2: bool = True) -> list:
             # looking for positions where there is only one availble
             # value left (because the others are in the same row,
             # column, or square)
-            row, col, sqr, a_row, a_col, a_sqr = board_definition.get_rcs(position)
+            row, col, sqr = board_def.get_rcs_alg1(position)
+            alg2_rcs = board_def.get_rcs_alg2(position)
             available = row & col & sqr  # Set operation
             available_count = len(available)
             for number in available:
-                a_row[int(number)].append(position)
-                a_col[int(number)].append(position)
-                a_sqr[int(number)].append(position)
+                for rcs in alg2_rcs:
+                    rcs[int(number)].append(position)        
             if available_count == 0:  # must be an invalid board
                 return False
             if available_count == 1:  # must be that number in this position
@@ -177,7 +187,7 @@ def solve_sudoku(board: list, alg2: bool = True) -> list:
                 if "0" not in board:
                     return board
                 changed = True
-                update_available(position, board[position], board_definition)
+                update_available(position, board[position], board_def)
             elif available_count < lowest["count"]:
                 lowest["count"] = available_count
                 lowest["position"] = position
@@ -186,14 +196,18 @@ def solve_sudoku(board: list, alg2: bool = True) -> list:
         # all 9 numbers. Cannot run if there have been changes made as
         # r1, c1, and s1 will not be up-to-date
         if changed is False and alg2 is True:
-            for row in (board_definition.r1 + board_definition.c1 + board_definition.s1):
-                for pos, available_pos in enumerate(row):
+            for rcs in (board_def.alg2_r
+                        + board_def.alg2_c
+                        + board_def.alg2_s):
+
+                for number, available_pos in enumerate(rcs):
                     if len(available_pos) == 1:
-                        board[available_pos[0]] = str(pos)
+                        position = available_pos.pop()
+                        board[position] = str(number)
                         if "0" not in board:
                             return board
                         changed = True
-                        update_available(available_pos[0], str(pos), board_definition)
+                        update_available(position, str(number), board_def)
 
         if changed is False:
             # try each possible alternative value in turn
