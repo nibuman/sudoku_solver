@@ -1,4 +1,4 @@
-__version__ = "2.11"
+__version__ = "3.0"
 
 import time
 import copy
