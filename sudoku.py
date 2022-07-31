@@ -3,6 +3,8 @@ __version__ = "3.0"
 import time
 import copy
 import json
+import logging
+
 
 difficulty_score = 0
 
@@ -14,7 +16,7 @@ class BoardDefinition():
         self.r = [{str(n) for n in range(1, 10)} for _ in range(9)]
         self.c = copy.deepcopy(self.r)
         self.s = copy.deepcopy(self.r)
-        self.alg2_r = [[[] for _ in range(10)] for _ in range(9)]
+        self.alg2_r = [[set() for _ in range(10)] for _ in range(9)]
         self.alg2_c = copy.deepcopy(self.alg2_r)
         self.alg2_s = copy.deepcopy(self.alg2_r)
 
@@ -60,6 +62,7 @@ class BoardDefinition():
         return tuple(alg2_rcs)
 
     def reset_alg2_rcs(self) -> None:
+        logging.debug(f'[BoardDefinition -> reset_alg2_rcs] resetting...')
         for i in range(9):
             for j in range(10):
                 self.alg2_r[i][j].clear()
@@ -79,15 +82,21 @@ def display_board(board_list: list) -> None:
 
 def update_available(board_pos: int,
                      number: str,
-                     cell_defn: BoardDefinition) -> None:
+                     cell_defn: BoardDefinition,
+                     algs: list = [1, 2]) -> None:
     """Update rows, columns and squares by removing unavailable numbers"""
-    for rcs in cell_defn.get_rcs_alg1(board_pos):
-        rcs.discard(number)
+    if 1 in algs:
+        logging.debug(f'[update_availabe] Updating for Alg1')
+        for rcs in cell_defn.get_rcs_alg1(board_pos):
+            rcs.discard(number)
 
-    # for rcs in cell_defn.get_rcs_alg2(board_pos):
-    #     for number in rcs:
-    #         if board_pos in number:
-    #             number.remove(board_pos)
+    if 2 in algs:
+        logging.debug(f'[update_availabe] Updating for Alg2')
+        for rcs in cell_defn.get_rcs_alg2(board_pos):
+            for numbers in rcs:
+                numbers.discard(board_pos)
+            rcs[int(number)].clear()
+            pass
 
 
 def valid_string(board_string: str) -> list:
@@ -99,6 +108,7 @@ def valid_string(board_string: str) -> list:
     """
     if board_string[0:3] == "sud":
         board_string = get_test_sudokus(int(board_string[3:5])-1)
+        logging.info(f'[valid_string] Using standard test Sudoku {board_string[0:5]}')
     allowed_vals = {str(n) for n in range(10)}
     board_list = [n for n in board_string if n in allowed_vals]
     if len(board_list) != 81:
@@ -115,12 +125,21 @@ def get_test_sudokus(puzzle_num: int) -> str:
     return config_data["sudoku_puzzle"][puzzle_num]["question"]
 
 
+def update_board(board: list, position: int, number: int):
+    board[position] = number
+    if "0" not in board:
+        return 'Solved'
+    logging.debug(f'[update_board] Assigned {board[position]} to position {position}')
+    update_available(position, board[position], board_def, algs=[1,2])
+
+
 def check_valid_sudoku(board: list) -> bool:
     """ Checks whether sudoku board is valid by definition
     i.e. is there just one of each digit in each row, column
     and square
     """
-
+    if board is False:
+        return False
     valid_set = {str(n) for n in range(1, 10)}
 
     # check rows are valid
@@ -159,9 +178,9 @@ def solve_sudoku(board: list, alg2: bool = True) -> list:
     global difficulty_score
     difficulty_score += 1
     board_def = BoardDefinition()
-
+    logging.debug(f'[solve_sudoku] Entering solve_sudoku. Alg2={alg2}')
     for position, number in enumerate(board):
-        update_available(position, number, board_def)
+        update_available(position, number, board_def, algs=[1])
 
     while "0" in board:
         board_def.reset_alg2_rcs()
@@ -177,37 +196,42 @@ def solve_sudoku(board: list, alg2: bool = True) -> list:
             alg2_rcs = board_def.get_rcs_alg2(position)
             available = row & col & sqr  # Set operation
             available_count = len(available)
-            for number in available:
-                for rcs in alg2_rcs:
-                    rcs[int(number)].append(position)        
+     
             if available_count == 0:  # must be an invalid board
+                logging.warning(f'[sudoku_solver] available_count == 0 in position {position}')
                 return False
             if available_count == 1:  # must be that number in this position
                 board[position] = available.pop()
                 if "0" not in board:
                     return board
                 changed = True
-                update_available(position, board[position], board_def)
-            elif available_count < lowest["count"]:
-                lowest["count"] = available_count
-                lowest["position"] = position
-                lowest["values"] = available.copy()
+                logging.debug(f'[solve_sudoku] Alg1 assigned {board[position]} to position {position}')
+                update_available(position, board[position], board_def, algs=[1])
+            else:
+                if available_count < lowest["count"]:
+                    lowest["count"] = available_count
+                    lowest["position"] = position
+                    lowest["values"] = available.copy()
+                for number in available:
+                    for rcs in alg2_rcs:
+                        rcs[int(number)].add(position)   
         # run the second algorithm - each row, col, sq must have 1 of
         # all 9 numbers. Cannot run if there have been changes made as
         # r1, c1, and s1 will not be up-to-date
         if changed is False and alg2 is True:
-            for rcs in (board_def.alg2_r
-                        + board_def.alg2_c
-                        + board_def.alg2_s):
-
-                for number, available_pos in enumerate(rcs):
-                    if len(available_pos) == 1:
-                        position = available_pos.pop()
-                        board[position] = str(number)
-                        if "0" not in board:
-                            return board
-                        changed = True
-                        update_available(position, str(number), board_def)
+            for alg2_rcs in (board_def.alg2_r,
+                             board_def.alg2_c,
+                             board_def.alg2_s):
+                for rcs in alg2_rcs:
+                    for number, available_pos in enumerate(rcs):
+                        if len(available_pos) == 1:
+                            position = available_pos.pop()
+                            board[position] = str(number)
+                            logging.debug(f'[solve_sudoku] Alg2 assigned {board[position]} to position {position}')
+                            if "0" not in board:
+                                return board
+                            changed = True
+                            update_available(position, str(number), board_def, algs=[1])
 
         if changed is False:
             # try each possible alternative value in turn
@@ -215,6 +239,7 @@ def solve_sudoku(board: list, alg2: bool = True) -> list:
             # to reduce the amount of recursion
             for test_num in lowest["values"]:
                 board[lowest["position"]] = test_num
+                logging.debug(f'[sudoku_solver] Trying {test_num} in position {lowest["position"]}')
                 if solved_bd := solve_sudoku(board.copy(),
                    alg2):
                     return solved_bd
@@ -222,26 +247,35 @@ def solve_sudoku(board: list, alg2: bool = True) -> list:
 
 
 def main():
+    logging.basicConfig(filename='sudoku_solver.log',
+                        filemode='w',
+                        format='%(asctime)s - %(levelname)s - %(message)s',
+                        level=logging.DEBUG)
+    logging.info("Started")
     global difficulty_score
 
     sudoku_input = input("Sudoku string: ")
 
     if not(board_list := valid_string(sudoku_input)):
         print("Not a valid Sudoku board")
+        logging.critical("Board string was not valid, exiting")
         exit()
     print("Original board")
     display_board(board_list)
-
+    logging.info(f'Board to solve:{"".join(board_list)}')
     t1 = time.time()
     solved_board = solve_sudoku(board_list, alg2=True)
     if check_valid_sudoku(solved_board):
         t2 = time.time()
+        logging.info(f'Board solved in {t2-t1} s')
+        logging.info(f'Solution: {"".join(solved_board)}')
         display_board(solved_board)
         print(f'{"".join(solved_board)}\n'
               f'Solved in {1000*(t2 - t1):5.1f} ms, '
               f'difficulty {difficulty_score}')
     else:
         print("Too hard")
+        logging.warning("Board could not be solved")
 
 
 if __name__ == "__main__":
