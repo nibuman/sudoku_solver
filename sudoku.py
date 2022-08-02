@@ -1,4 +1,4 @@
-__version__ = "3.0"
+__version__ = "3.1"
 
 import time
 import copy
@@ -32,7 +32,7 @@ class BoardDefinition():
                     606 616 626   637 647 657   668 678 688
                     706 716 726   737 747 757   768 778 788
                     806 816 826   837 847 857   868 878 888"""
-        # format string as (({row}, {col}, {sq}, [r1], [c1], [s1]),...)
+        # format string as (({row}, {col}, {sq}, [alg2_r1], [alg2_c1],...)
         self.defn = tuple(
                             [(self.r[int(x)],
                               self.c[int(y)],
@@ -43,12 +43,6 @@ class BoardDefinition():
                              for x, y, z in defn_str.split()]
                           )
 
-    def get_rcs(self, cell: int) -> tuple:
-        """Returns the row, column and square for a particular cell
-        """
-        all_rcs = [self.defn[cell][rcs] for rcs in range(6)]
-        return tuple(all_rcs)
-
     def get_rcs_alg1(self, cell: int) -> tuple:
         """Returns the row, column and square for a particular cell
         """
@@ -57,17 +51,10 @@ class BoardDefinition():
 
     def get_rcs_alg2(self, cell: int) -> tuple:
         """Returns the row, column and square for a particular cell
+           for alg2
         """
         alg2_rcs = [self.defn[cell][rcs] for rcs in range(3, 6)]
         return tuple(alg2_rcs)
-
-    def reset_alg2_rcs(self) -> None:
-        logging.debug(f'[BoardDefinition -> reset_alg2_rcs] resetting...')
-        for i in range(9):
-            for j in range(10):
-                self.alg2_r[i][j].clear()
-                self.alg2_c[i][j].clear()
-                self.alg2_s[i][j].clear()
 
 
 def display_board(board_list: list) -> None:
@@ -86,12 +73,12 @@ def update_available(board_pos: int,
                      algs: list = [1, 2]) -> None:
     """Update rows, columns and squares by removing unavailable numbers"""
     if 1 in algs:
-        logging.debug(f'[update_availabe] Updating for Alg1')
+        logging.debug('[update_availabe] Updating for Alg1')
         for rcs in cell_defn.get_rcs_alg1(board_pos):
             rcs.discard(number)
 
     if 2 in algs:
-        logging.debug(f'[update_availabe] Updating for Alg2')
+        logging.debug('[update_availabe] Updating for Alg2')
         for rcs in cell_defn.get_rcs_alg2(board_pos):
             for numbers in rcs:
                 numbers.discard(board_pos)
@@ -108,7 +95,7 @@ def valid_string(board_string: str) -> list:
     """
     if board_string[0:3] == "sud":
         board_string = get_test_sudokus(int(board_string[3:5])-1)
-        logging.info(f'[valid_string] Using standard test Sudoku {board_string[0:5]}')
+        logging.info(f'[valid_string]standard test Sudoku {board_string[0:5]}')
     allowed_vals = {str(n) for n in range(10)}
     board_list = [n for n in board_string if n in allowed_vals]
     if len(board_list) != 81:
@@ -119,18 +106,10 @@ def valid_string(board_string: str) -> list:
 def get_test_sudokus(puzzle_num: int) -> str:
     """Retrieves the test Sudoku boards from the config file
     """
-    assert 0 <= puzzle_num < 7, f'Test Sudoku must be 01-07, {puzzle_num} given.'
+    assert 0 <= puzzle_num < 7, f'Test Sudoku must be 01-07,{puzzle_num} given'
     with open('./sudoku_data.json', 'r') as f:
         config_data = json.load(f)
     return config_data["sudoku_puzzle"][puzzle_num]["question"]
-
-
-def update_board(board: list, position: int, number: int):
-    board[position] = number
-    if "0" not in board:
-        return 'Solved'
-    logging.debug(f'[update_board] Assigned {board[position]} to position {position}')
-    update_available(position, board[position], board_def, algs=[1,2])
 
 
 def check_valid_sudoku(board: list) -> bool:
@@ -146,13 +125,11 @@ def check_valid_sudoku(board: list) -> bool:
     for i in range(0, 81, 9):
         row = set(board[i:i+9])
         if row != valid_set:
-            print(f'Row {i//9} invalid')
             return False
     # check columns are valid
     for i in range(9):
         col = set(board[i::9])
         if col != valid_set:
-            print(f'Column {i} invalid')
             return False
     # check squares are valid
     for i in range(0, 81, 27):
@@ -162,7 +139,6 @@ def check_valid_sudoku(board: list) -> bool:
                 sq.extend(board[i+j+k:i+j+k+3])
             sq = set(sq)
             if sq != valid_set:
-                print(f'Square {i//9 + j//3} invalid')
                 return False
     return True
 
@@ -180,10 +156,9 @@ def solve_sudoku(board: list, alg2: bool = True) -> list:
     board_def = BoardDefinition()
     logging.debug(f'[solve_sudoku] Entering solve_sudoku. Alg2={alg2}')
     for position, number in enumerate(board):
-        update_available(position, number, board_def, algs=[1])
+        update_available(position, number, board_def, algs=[1, 2])
 
-    while "0" in board:
-        board_def.reset_alg2_rcs()
+    while True:
         changed = False
         lowest = {"position": 0, "count": 9, "values": {}}
         for position, number in enumerate(board):
@@ -198,7 +173,7 @@ def solve_sudoku(board: list, alg2: bool = True) -> list:
             available_count = len(available)
      
             if available_count == 0:  # must be an invalid board
-                logging.warning(f'[sudoku_solver] available_count == 0 in position {position}')
+                logging.warning(f'[sudoku_solver] available_count == 0 in pos {position}')
                 return False
             if available_count == 1:  # must be that number in this position
                 board[position] = available.pop()
@@ -206,7 +181,7 @@ def solve_sudoku(board: list, alg2: bool = True) -> list:
                     return board
                 changed = True
                 logging.debug(f'[solve_sudoku] Alg1 assigned {board[position]} to position {position}')
-                update_available(position, board[position], board_def, algs=[1])
+                update_available(position, board[position], board_def, algs=[1, 2])
             else:
                 if available_count < lowest["count"]:
                     lowest["count"] = available_count
@@ -216,9 +191,8 @@ def solve_sudoku(board: list, alg2: bool = True) -> list:
                     for rcs in alg2_rcs:
                         rcs[int(number)].add(position)   
         # run the second algorithm - each row, col, sq must have 1 of
-        # all 9 numbers. Cannot run if there have been changes made as
-        # r1, c1, and s1 will not be up-to-date
-        if changed is False and alg2 is True:
+        # all 9 numbers. 
+        if alg2 is True:
             for alg2_rcs in (board_def.alg2_r,
                              board_def.alg2_c,
                              board_def.alg2_s):
@@ -227,19 +201,26 @@ def solve_sudoku(board: list, alg2: bool = True) -> list:
                         if len(available_pos) == 1:
                             position = available_pos.pop()
                             board[position] = str(number)
-                            logging.debug(f'[solve_sudoku] Alg2 assigned {board[position]} to position {position}')
+                            logging.debug(f'[solve_sudoku] Alg2 assigned'
+                                          f'{board[position]} to position'
+                                          f'{position}')
                             if "0" not in board:
                                 return board
                             changed = True
-                            update_available(position, str(number), board_def, algs=[1])
+                            update_available(board_pos=position,
+                                             number=str(number),
+                                             cell_defn=board_def,
+                                             algs=[1])
 
         if changed is False:
-            # try each possible alternative value in turn
+            # Try each possible alternative value in turn
             # using the board position with fewest alternatives
-            # to reduce the amount of recursion
+            # to reduce the amount of recursion. Last resort
+            # only runs if cannot fill numbers using other methods.
             for test_num in lowest["values"]:
                 board[lowest["position"]] = test_num
-                logging.debug(f'[sudoku_solver] Trying {test_num} in position {lowest["position"]}')
+                logging.debug(f'[sudoku_solver] Trying {test_num}'
+                              f'in position {lowest["position"]}')
                 if solved_bd := solve_sudoku(board.copy(),
                    alg2):
                     return solved_bd
@@ -250,7 +231,7 @@ def main():
     logging.basicConfig(filename='sudoku_solver.log',
                         filemode='w',
                         format='%(asctime)s - %(levelname)s - %(message)s',
-                        level=logging.DEBUG)
+                        level=logging.WARNING)
     logging.info("Started")
     global difficulty_score
 
