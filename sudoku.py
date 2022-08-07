@@ -216,7 +216,7 @@ def alg2(board, board_def):
     return changed
 
 
-def alg3(board, board_def, lowest, use_alg2):
+def alg3(board, lowest, use_alg2):
     """Try each possible alternative value in turn using the board
     position with fewest alternatives to reduce the amount of recursion
     Last resort only runs if cannot fill numbers using other methods.
@@ -261,7 +261,7 @@ def solve_sudoku(board: list, use_alg2: bool = True) -> list:
                 continue
 
         # Alg 3
-        return alg3(board, board_def, lowest, use_alg2)
+        return alg3(board, lowest, use_alg2)
 
     return check_valid_sudoku(board)
 

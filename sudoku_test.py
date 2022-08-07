@@ -37,7 +37,7 @@ class SudokuSolverTest(unittest.TestCase):
         test_input = "342qh234h343243"
         test_result = sudoku.valid_string(test_input)
         self.assertEqual(False, test_result)
-        
+
     def test_sudoku_01(self) -> None:
         self.run_sudoku_solver(puzzle_num=0, use_alg2=False)
 
@@ -112,11 +112,11 @@ class SudokuSolverTest(unittest.TestCase):
 
         # Write out results to file
         csv_row = [datetime.datetime.now(),     # Current date and time
-                    "\"" + puzzle + "\"",       # The full puzzle board
-                    f'{t2-t1:8.5f}',            # Time to solve
-                    sudoku.difficulty_score,    # Difficulty score
-                    use_alg2,                       # Algorithm(s) used
-                    "v" + sudoku.__version__]   # Version
+                   "\"" + puzzle + "\"",        # The full puzzle board
+                   f'{t2-t1:8.5f}',             # Time to solve
+                   sudoku.difficulty_score,     # Difficulty score
+                   use_alg2,                    # Algorithm(s) used
+                   "v" + sudoku.__version__]    # Version
 
         with open('sudoku_tst_scores.csv', 'a', encoding='UTF8') as f:
             writer = csv.writer(f)
