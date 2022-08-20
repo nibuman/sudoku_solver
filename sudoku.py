@@ -14,45 +14,7 @@ difficulty_score = 0
 
 class SudokuBoard:
     def __init__(self, board) -> None:
-        # lists of sets of available numbers by row, column or square
-        self.r = [{str(n) for n in range(1, 10)} for _ in range(9)]
-        self.c = copy.deepcopy(self.r)
-        self.s = copy.deepcopy(self.r)
-        self.alg2_r = [[set() for _ in range(10)] for _ in range(9)]
-        self.alg2_c = copy.deepcopy(self.alg2_r)
-        self.alg2_s = copy.deepcopy(self.alg2_r)
         self.board = board
-        # define which rows, columns, and squares apply to each cell
-        defn_str = """000 010 020   031 041 051   062 072 082
-                    100 110 120   131 141 151   162 172 182
-                    200 210 220   231 241 251   262 272 282
-
-                    303 313 323   334 344 354   365 375 385
-                    403 413 423   434 444 454   465 475 485
-                    503 513 523   534 544 554   565 575 585
-
-                    606 616 626   637 647 657   668 678 688
-                    706 716 726   737 747 757   768 778 788
-                    806 816 826   837 847 857   868 878 888"""
-        # format string as (({row}, {col}, {sq}, [alg2_r1], [alg2_c1],...)
-        self.defn = tuple(
-            [
-                (
-                    self.r[int(x)],
-                    self.c[int(y)],
-                    self.s[int(z)],
-                    self.alg2_r[int(x)],
-                    self.alg2_c[int(y)],
-                    self.alg2_s[int(z)],
-                )
-                for x, y, z in defn_str.split()
-            ]
-        )
-
-    def get_rcs_alg1(self, cell: int) -> tuple:
-        """Returns the row, column and square for a particular cell"""
-        alg1_rcs = [self.defn[cell][rcs] for rcs in range(3)]
-        return tuple(alg1_rcs)
 
     def get_rcs_alg2(self, cell: int) -> tuple:
         """Returns the row, column and square for a particular cell
@@ -102,7 +64,6 @@ class SudokuBoard:
     def update_board(self, position: int, number: str) -> None:
         r, c = self.get_index(position)
         self.board[r, c] = number
-        pass
 
     def get_position(self, position: int) -> str:
         r, c = self.get_index(position)
@@ -120,32 +81,31 @@ class SudokuBoard:
 
         # check rows are valid
         for i in range(0, 81, 9):
-            row = self.get_row(i)
-            if row != valid_set:
+            if self.get_row(i) != valid_set:
                 return False
         # check columns are valid
         for i in range(9):
-            col = self.get_col(i)
-            if col != valid_set:
+            if self.get_col(i) != valid_set:
                 return False
         # check squares are valid
         for i in range(0, 81, 12):
-            sq = self.get_sqr(i)
-            if sq != valid_set:
+            if self.get_sqr(i) != valid_set:
                 return False
-        return True
+        return self.get_string()
 
+    def display(self) -> None:
+        """Prints Sudoku board in readable format"""
 
-def display_board(board_list: list) -> None:
-    """Prints Sudoku board in readable format"""
-    board = "".join(board_list)
-    for a in range(0, 81, 27):
-        for b in range(0, 27, 9):
-            n = a + b
-            print(
-                board[n : n + 3], " ", board[n + 3 : n + 6], " ", board[n + 6 : n + 9]
-            )
-        print("\n")
+        for a in range(0, 81, 27):
+            for b in range(0, 27, 9):
+                n = a + b
+                r, _ = self.get_index(n)
+                row = "".join(self.board[r, :])
+                print(row[0:3], " ", row[3:6], " ", row[6:9])
+            print("\n")
+
+    def get_string(self) -> str:
+        return "".join(self.board.flatten())
 
 
 def valid_string(board_string: str) -> list:
@@ -204,7 +164,7 @@ def alg1(sudoku):
                 lowest["count"] = available_count
                 lowest["position"] = position
                 lowest["values"] = available.copy()
-            update_alg2(available, sudoku, position)
+            # update_alg2(available, sudoku, position)
 
     return {"changed": changed, "error": board_error, "lowest": lowest}
 
@@ -264,10 +224,12 @@ def solve_sudoku(board, use_alg2: bool = False) -> list:
     global difficulty_score
     difficulty_score += 1
     sudoku = SudokuBoard(array_from_list(board))
+    print("Original board:")
+    sudoku.display()
     logging.debug(f"[solve_sudoku] Entering solve_sudoku. Alg2={use_alg2}")
 
     while "0" in sudoku.board:
-        sudoku.reset_alg2()
+        # sudoku.reset_alg2()
         # Alg1
         result = alg1(sudoku)
         if result["error"] is True:
@@ -284,7 +246,10 @@ def solve_sudoku(board, use_alg2: bool = False) -> list:
         # Alg 3
         return alg3(board, lowest, use_alg2)
 
-    return sudoku.check_valid()
+    if result := sudoku.check_valid():
+        print("Solved board")
+        sudoku.display()
+    return result
 
 
 def main():
@@ -303,17 +268,14 @@ def main():
         print("Not a valid Sudoku board")
         logging.critical("Board string was not valid, exiting")
         exit()
-    print("Original board")
-    display_board(board_list)
     logging.info(f'Board to solve:{"".join(board_list)}')
     t1 = time.time()
     if solved_board := solve_sudoku(board_list, use_alg2=True):
         t2 = time.time()
         logging.info(f"Board solved in {t2-t1} s")
-        logging.info(f'Solution: {"".join(solved_board)}')
-        display_board(solved_board)
+        logging.info(f"Solution: {solved_board}")
         print(
-            f'{"".join(solved_board)}\n'
+            f"{solved_board}\n"
             f"Solved in {1000*(t2 - t1):5.1f} ms, "
             f"difficulty {difficulty_score}"
         )
