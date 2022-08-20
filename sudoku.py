@@ -3,13 +3,17 @@ __version__ = "4"
 import copy
 import json
 import logging
+from os import get_inheritable
+from re import X
 import time
+from turtle import pos
+import numpy as np
 
 difficulty_score = 0
 
 
-class BoardDefinition:
-    def __init__(self) -> None:
+class SudokuBoard:
+    def __init__(self, board) -> None:
         # lists of sets of available numbers by row, column or square
         self.r = [{str(n) for n in range(1, 10)} for _ in range(9)]
         self.c = copy.deepcopy(self.r)
@@ -17,7 +21,7 @@ class BoardDefinition:
         self.alg2_r = [[set() for _ in range(10)] for _ in range(9)]
         self.alg2_c = copy.deepcopy(self.alg2_r)
         self.alg2_s = copy.deepcopy(self.alg2_r)
-
+        self.board = board
         # define which rows, columns, and squares apply to each cell
         defn_str = """000 010 020   031 041 051   062 072 082
                     100 110 120   131 141 151   162 172 182
@@ -57,26 +61,79 @@ class BoardDefinition:
         alg2_rcs = [self.defn[cell][rcs] for rcs in range(3, 6)]
         return tuple(alg2_rcs)
 
-    def initialise_available(self, board: list) -> list:
-        """Move to BoardDefinition Class????"""
-        for position, number in enumerate(board):
-            self.update_available(position, number)
-
     def reset_alg2(self):
         for alg2_rcs in (self.alg2_r, self.alg2_c, self.alg2_s):
             for rcs in alg2_rcs:
                 for position_set in rcs:
                     position_set.clear()
 
-    def get_available(self, position: int) -> set:
-        """Return numbers that are available in a given position"""
-        row, col, sqr = self.get_rcs_alg1(position)
-        return row & col & sqr
+    def get_index(self, position):
+        r = position // 9
+        c = position % 9
+        return (r, c)
 
-    def update_available(self, board_pos: int, number: str) -> None:
-        """Update rows, columns and squares by removing unavailable numbers"""
-        for rcs in self.get_rcs_alg1(board_pos):
-            rcs.discard(number)
+    def get_row(self, position: int) -> set:
+        r, _ = self.get_index(position)
+        return set(self.board[r, :])
+
+    def get_col(self, position: int) -> set:
+        _, c = self.get_index(position)
+        return set(self.board[:, c])
+
+    def get_sqr(self, position: int) -> set:
+        r, c = self.get_index(position)
+        sq_row = (r // 3) * 3
+        sq_col = (c // 3) * 3
+        return set(self.board[sq_row : sq_row + 3, sq_col : sq_col + 3].flatten())
+
+    def get_not_available(self, position: int) -> set:
+        row = self.get_row(position)
+        col = self.get_col(position)
+        sqr = self.get_sqr(position)
+        return set.union(row, col, sqr)
+
+    def get_available(self, position: int) -> set:
+        """Return set of numbers that are available in a given position"""
+        all_digits = {str(n) for n in range(1, 10)}
+        not_available = self.get_not_available(position)
+        x = all_digits.difference(not_available)
+        return x
+
+    def update_board(self, position: int, number: str) -> None:
+        r, c = self.get_index(position)
+        self.board[r, c] = number
+        pass
+
+    def get_position(self, position: int) -> str:
+        r, c = self.get_index(position)
+        return self.board[r, c]
+
+    def check_valid(self) -> bool:
+        """Checks whether sudoku board is valid by definition
+        i.e. is there just one of each digit in each row, column
+        and square
+        """
+
+        if self.board is False:
+            return False
+        valid_set = {str(n) for n in range(1, 10)}
+
+        # check rows are valid
+        for i in range(0, 81, 9):
+            row = self.get_row(i)
+            if row != valid_set:
+                return False
+        # check columns are valid
+        for i in range(9):
+            col = self.get_col(i)
+            if col != valid_set:
+                return False
+        # check squares are valid
+        for i in range(0, 81, 12):
+            sq = self.get_sqr(i)
+            if sq != valid_set:
+                return False
+        return True
 
 
 def display_board(board_list: list) -> None:
@@ -108,6 +165,10 @@ def valid_string(board_string: str) -> list:
     return board_list
 
 
+def array_from_list(board_list):
+    return np.reshape(board_list, (9, 9))
+
+
 def get_test_sudokus(puzzle_num: int) -> str:
     """Retrieves the test Sudoku boards from the config file"""
     assert 0 <= puzzle_num < 7, f"Test Sudoku must be 01-07,{puzzle_num} given"
@@ -116,45 +177,14 @@ def get_test_sudokus(puzzle_num: int) -> str:
     return config_data["sudoku_puzzle"][puzzle_num]["question"]
 
 
-def check_valid_sudoku(board: list) -> bool:
-    """Checks whether sudoku board is valid by definition
-    i.e. is there just one of each digit in each row, column
-    and square
-    """
-    if board is False:
-        return False
-    valid_set = {str(n) for n in range(1, 10)}
-
-    # check rows are valid
-    for i in range(0, 81, 9):
-        row = set(board[i : i + 9])
-        if row != valid_set:
-            return False
-    # check columns are valid
-    for i in range(9):
-        col = set(board[i::9])
-        if col != valid_set:
-            return False
-    # check squares are valid
-    for i in range(0, 81, 27):
-        for j in range(0, 9, 3):
-            sq = []
-            for k in range(0, 27, 9):
-                sq.extend(board[i + j + k : i + j + k + 3])
-            sq = set(sq)
-            if sq != valid_set:
-                return False
-    return board
-
-
-def alg1(board, board_def):
+def alg1(sudoku):
     changed = False
     board_error = False
     lowest = {"position": 0, "count": 9, "values": {}}
-    for position, num_str in enumerate(board):
+    for position, num_str in enumerate(sudoku.board.flatten()):
         if num_str != "0":
             continue
-        available = board_def.get_available(position)
+        available = sudoku.get_available(position)
         available_count = len(available)
 
         if available_count == 0:  # must be an invalid board
@@ -162,36 +192,37 @@ def alg1(board, board_def):
             board_error = True
             break
         if available_count == 1:  # must be that number in this position
-            board[position] = available.pop()
+            sudoku.update_board(position, available.pop())
             changed = True
             logging.debug(
-                f"[alg1] Assigned {board[position]}" f" to position {position}"
+                f"[alg1] Assigned {sudoku.get_position(position)}"
+                f" to position {position}"
             )
-            board_def.update_available(position, board[position])
+            # sudoku.update_available(position, board[position])
         else:
             if available_count < lowest["count"]:
                 lowest["count"] = available_count
                 lowest["position"] = position
                 lowest["values"] = available.copy()
-            update_alg2(available, board_def, position)
+            update_alg2(available, sudoku, position)
 
     return {"changed": changed, "error": board_error, "lowest": lowest}
 
 
-def update_alg2(available: set, board_def: list, position: int) -> None:
+def update_alg2(available: set, sudoku: list, position: int) -> None:
     """Updates the list of sets of available positions for each number
     in a row, column, or square
     """
-    alg2_rcs = board_def.get_rcs_alg2(position)
+    alg2_rcs = sudoku.get_rcs_alg2(position)
     for number in available:
         for rcs in alg2_rcs:
             rcs[int(number)].add(position)
 
 
-def alg2(board, board_def):
+def alg2(board, sudoku):
     """run the second algorithm - each row, col, sq must have 1 of all 9 numbers."""
     changed = False
-    for alg2_rcs in (board_def.alg2_r, board_def.alg2_c, board_def.alg2_s):
+    for alg2_rcs in (sudoku.alg2_r, sudoku.alg2_c, sudoku.alg2_s):
         for rcs in alg2_rcs:
             for number, available_pos in enumerate(rcs):
                 if len(available_pos) == 1:
@@ -203,7 +234,7 @@ def alg2(board, board_def):
                         f"{position}"
                     )
                     changed = True
-                    board_def.update_available(board_pos=position, number=str(number))
+                    # sudoku.update_available(board_pos=position, number=str(number))
 
     return changed
 
@@ -222,7 +253,7 @@ def alg3(board, lowest, use_alg2):
     return False
 
 
-def solve_sudoku(board: list, use_alg2: bool = True) -> list:
+def solve_sudoku(board, use_alg2: bool = False) -> list:
     """Try to solve any Sudoku board, needs to be called for each guess
     - Iterates through every cell
     - Removes any values already used in each row, column or square
@@ -232,14 +263,13 @@ def solve_sudoku(board: list, use_alg2: bool = True) -> list:
     """
     global difficulty_score
     difficulty_score += 1
-    board_def = BoardDefinition()
+    sudoku = SudokuBoard(array_from_list(board))
     logging.debug(f"[solve_sudoku] Entering solve_sudoku. Alg2={use_alg2}")
-    board_def.initialise_available(board)
 
-    while "0" in board:
-        board_def.reset_alg2()
+    while "0" in sudoku.board:
+        sudoku.reset_alg2()
         # Alg1
-        result = alg1(board, board_def)
+        result = alg1(sudoku)
         if result["error"] is True:
             return False
         if result["changed"] is True:
@@ -248,13 +278,13 @@ def solve_sudoku(board: list, use_alg2: bool = True) -> list:
 
         # Alg 2
         if use_alg2:
-            if alg2(board, board_def):
+            if alg2(board, sudoku):
                 continue
 
         # Alg 3
         return alg3(board, lowest, use_alg2)
 
-    return check_valid_sudoku(board)
+    return sudoku.check_valid()
 
 
 def main():
@@ -262,7 +292,7 @@ def main():
         filename="sudoku_solver.log",
         filemode="w",
         format="%(asctime)s - %(levelname)s - %(message)s",
-        level=logging.ERROR,
+        level=logging.DEBUG,
     )
     logging.info("Started")
     global difficulty_score
