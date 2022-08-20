@@ -87,12 +87,14 @@ class SudokuSolverTest(unittest.TestCase):
         """
         invalid_boards = self.config_data["invalid_boards"]
         for invalid_board in invalid_boards:
-            result = sudoku.check_valid_sudoku(invalid_board)
+            board_array = sudoku.array_from_list(list(invalid_board))
+            result = sudoku.SudokuBoard(board_array).check_valid()
             self.assertEqual(False, result)
 
         valid_boards = self.config_data["sudoku_puzzle"]
         for valid_board in valid_boards:
-            result = sudoku.check_valid_sudoku(valid_board["answer"])
+            board_array = sudoku.array_from_list(list(valid_board["answer"]))
+            result = sudoku.SudokuBoard(board_array).check_valid()
             self.assertEqual(valid_board["answer"], result)
 
     def run_sudoku_solver(self, puzzle_num: int, use_alg2=True):
@@ -107,7 +109,7 @@ class SudokuSolverTest(unittest.TestCase):
         test_result = sudoku.solve_sudoku(list(puzzle), use_alg2=use_alg2)
         t2 = time.time()
 
-        self.assertEqual(test_result, list(answer))
+        self.assertEqual(test_result, answer)
 
         # Write out results to file
         csv_row = [
