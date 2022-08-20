@@ -7,9 +7,8 @@ import datetime
 
 
 class SudokuSolverTest(unittest.TestCase):
-
     def setUp(self) -> None:
-        with open('./sudoku_data.json', 'r') as f:
+        with open("./sudoku_data.json", "r") as f:
             self.config_data = json.load(f)
         return super().setUp()
 
@@ -30,7 +29,7 @@ class SudokuSolverTest(unittest.TestCase):
         self.assertEqual(correct_result, test_result)
         # Check that standard test boards are retrieved
         test_input = "sud01"
-        correct_result = list(self.config_data['sudoku_puzzle'][0]["question"])
+        correct_result = list(self.config_data["sudoku_puzzle"][0]["question"])
         test_result = sudoku.valid_string(test_input)
         self.assertEqual(correct_result, test_result)
         # Check that strings of the wrong length are rejected
@@ -91,7 +90,7 @@ class SudokuSolverTest(unittest.TestCase):
             result = sudoku.check_valid_sudoku(invalid_board)
             self.assertEqual(False, result)
 
-        valid_boards = self.config_data['sudoku_puzzle']
+        valid_boards = self.config_data["sudoku_puzzle"]
         for valid_board in valid_boards:
             result = sudoku.check_valid_sudoku(valid_board["answer"])
             self.assertEqual(valid_board["answer"], result)
@@ -111,14 +110,16 @@ class SudokuSolverTest(unittest.TestCase):
         self.assertEqual(test_result, list(answer))
 
         # Write out results to file
-        csv_row = [datetime.datetime.now(),     # Current date and time
-                   "\"" + puzzle + "\"",        # The full puzzle board
-                   f'{t2-t1:8.5f}',             # Time to solve
-                   sudoku.difficulty_score,     # Difficulty score
-                   use_alg2,                    # Algorithm(s) used
-                   "v" + sudoku.__version__]    # Version
+        csv_row = [
+            datetime.datetime.now(),  # Current date and time
+            '"' + puzzle + '"',  # The full puzzle board
+            f"{t2-t1:8.5f}",  # Time to solve
+            sudoku.difficulty_score,  # Difficulty score
+            use_alg2,  # Algorithm(s) used
+            "v" + sudoku.__version__,
+        ]  # Version
 
-        with open('sudoku_tst_scores.csv', 'a', encoding='UTF8') as f:
+        with open("sudoku_tst_scores.csv", "a", encoding="UTF8") as f:
             writer = csv.writer(f)
             writer.writerow(csv_row)
 
