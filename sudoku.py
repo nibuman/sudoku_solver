@@ -4,8 +4,11 @@ import json
 import logging
 import time
 import numpy as np
+import argparse
+
 
 difficulty_score = 0
+quiet = False
 
 
 class SudokuBoard:
@@ -121,6 +124,8 @@ class SudokuBoard:
 
     def display(self) -> None:
         """Prints Sudoku board in readable format"""
+        if quiet:
+            return
         for a in range(0, 81, 27):
             for b in range(0, 27, 9):
                 n = a + b
@@ -158,7 +163,7 @@ def array_from_list(board_list):
 
 def get_test_sudokus(puzzle_num: int) -> str:
     """Retrieves the test Sudoku boards from the config file"""
-    assert 0 <= puzzle_num < 7, f"Test Sudoku must be 01-07,{puzzle_num} given"
+    assert 0 <= puzzle_num < 7, f"Test Sudoku must be 01-06,{puzzle_num} given"
     with open("./sudoku_data.json", "r") as f:
         config_data = json.load(f)
     return config_data["sudoku_puzzle"][puzzle_num]["question"]
@@ -263,12 +268,41 @@ def solve_sudoku(board, use_alg2: bool = True) -> list:
         return alg3(sudoku, lowest, use_alg2)
 
     if result := sudoku.check_valid():
-        print("Solved board")
         sudoku.display()
     return result
 
 
 def main():
+    global quiet
+    global difficulty_score
+
+    parser = argparse.ArgumentParser(
+        prog="sudoku", description="Solve any Sudoku puzzle"
+    )
+    parse_group = parser.add_mutually_exclusive_group(required=False)
+    parse_group.add_argument(
+        "-s",
+        "--sudoku_string",
+        action="store",
+        help="use supplied Sudoku string",
+        type=str,
+    )
+    parse_group.add_argument(
+        "-p",
+        "--preset",
+        help="use preset Sudoku board 1-6",
+        action="store",
+        choices=range(1, 7),
+        type=int,
+    )
+    parser.add_argument(
+        "-v", "--version", action="version", version="%(prog)s " + __version__
+    )
+    parser.add_argument(
+        "-q", "--quiet", help="display only output string", action="store_true"
+    )
+    args = parser.parse_args()
+
     logging.basicConfig(
         filename="sudoku_solver.log",
         filemode="w",
@@ -277,31 +311,37 @@ def main():
     )
 
     logging.info("Started")
-    global difficulty_score
 
-    sudoku_input = input("Sudoku string: ")
+    if args.quiet:
+        quiet = True
+    if args.preset:
+        sudoku_input = get_test_sudokus(args.preset)
+    elif args.sudoku_string:
+        sudoku_input = args.sudoku_string
+    else:
+        sudoku_input = input("Sudoku string: ")
 
     if not (board_list := valid_string(sudoku_input)):
-        print("Not a valid Sudoku board")
         logging.critical("Board string was not valid, exiting")
         exit()
     logging.info(f'Board to solve:{"".join(board_list)}')
-    original_board = SudokuBoard(array_from_list(board_list))
-    print("Original board:")
-    original_board.display()
-    t1 = time.time()
+
+    t1 = time.perf_counter()
     if solved_board := solve_sudoku(board_list, use_alg2=True):
-        t2 = time.time()
+        t2 = time.perf_counter()
         logging.info(f"Board solved in {t2-t1} s")
         logging.info(f"Solution: {solved_board}")
-        print(
-            f"{solved_board}\n"
-            f"Solved in {1000*(t2 - t1):5.1f} ms, "
-            f"difficulty {difficulty_score}"
-        )
+
+        if quiet:
+            print(solved_board)
+        else:
+            print(
+                f"board: {solved_board}\n"
+                f"Solved in (ms): {1000*(t2 - t1):5.1f}\n"
+                f"difficulty: {difficulty_score}"
+            )
     else:
-        print("Too hard")
-        logging.warning("Board could not be solved")
+        logging.warning("board: 0")
 
 
 if __name__ == "__main__":
