@@ -3,9 +3,8 @@ __version__ = "5"
 import json
 import logging
 import time
-import numpy as np
 import argparse
-
+import numpy as np
 
 difficulty_score = 0
 quiet = False
@@ -88,8 +87,7 @@ class SudokuBoard:
         """Return set of numbers that are available in a given position"""
         all_digits = {str(n) for n in range(1, 10)}
         not_available = self.get_not_available(position)
-        x = all_digits.difference(not_available)
-        return x
+        return all_digits.difference(not_available)
 
     def update_board(self, position: int, number: str) -> None:
         """Places a number in the board"""
@@ -223,7 +221,7 @@ def alg2(sudoku):
     return changed
 
 
-def alg3(sudoku, lowest, use_alg2):
+def alg3(sudoku, lowest):
     """Try each possible alternative value in turn using the board
     position with fewest alternatives to reduce the amount of recursion
     Last resort only runs if cannot fill numbers using other methods.
@@ -231,12 +229,12 @@ def alg3(sudoku, lowest, use_alg2):
     for test_num in lowest["values"]:
         sudoku.update_board(lowest["position"], test_num)
         logging.debug(f"[alg3] Trying {test_num}" f'in position {lowest["position"]}')
-        if solved_bd := solve_sudoku(list(sudoku.get_string()), use_alg2):
+        if solved_bd := solve_sudoku(list(sudoku.get_string())):
             return solved_bd
     return False
 
 
-def solve_sudoku(board, use_alg2: bool = True) -> list:
+def solve_sudoku(board) -> list:
     """Try to solve any Sudoku board, needs to be called for each guess
     - Iterates through every cell
     - Removes any values already used in each row, column or square
@@ -247,7 +245,7 @@ def solve_sudoku(board, use_alg2: bool = True) -> list:
     global difficulty_score
     difficulty_score += 1
     sudoku = SudokuBoard(array_from_list(board))
-    logging.debug(f"[solve_sudoku] Entering solve_sudoku. Alg2={use_alg2}")
+    logging.debug(f"[solve_sudoku] Entering solve_sudoku.")
 
     while "0" in sudoku.board:
         sudoku.reset_alg2()
@@ -260,12 +258,11 @@ def solve_sudoku(board, use_alg2: bool = True) -> list:
         lowest = result["lowest"]
 
         # Alg 2
-        if use_alg2:
-            if alg2(sudoku):
-                continue
+        if alg2(sudoku):
+            continue
 
         # Alg 3
-        return alg3(sudoku, lowest, use_alg2)
+        return alg3(sudoku, lowest)
 
     if result := sudoku.check_valid():
         sudoku.display()
@@ -327,7 +324,7 @@ def main():
     logging.info(f'Board to solve:{"".join(board_list)}')
 
     t1 = time.perf_counter()
-    if solved_board := solve_sudoku(board_list, use_alg2=True):
+    if solved_board := solve_sudoku(board_list):
         t2 = time.perf_counter()
         logging.info(f"Board solved in {t2-t1} s")
         logging.info(f"Solution: {solved_board}")

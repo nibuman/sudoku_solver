@@ -38,46 +38,25 @@ class SudokuSolverTest(unittest.TestCase):
         self.assertEqual(False, test_result)
 
     def test_sudoku_01(self) -> None:
-        self.run_sudoku_solver(puzzle_num=0, use_alg2=False)
-
-    def test_sudoku_01_a2(self) -> None:
-        self.run_sudoku_solver(puzzle_num=0, use_alg2=True)
+        self.run_sudoku_solver(puzzle_num=0)
 
     def test_sudoku_02(self) -> None:
-        self.run_sudoku_solver(puzzle_num=1, use_alg2=False)
-
-    def test_sudoku_02_a2(self) -> None:
-        self.run_sudoku_solver(puzzle_num=1, use_alg2=True)
+        self.run_sudoku_solver(puzzle_num=1)
 
     def test_sudoku_03(self) -> None:
-        self.run_sudoku_solver(puzzle_num=2, use_alg2=False)
-
-    def test_sudoku_03_a2(self) -> None:
-        self.run_sudoku_solver(puzzle_num=2, use_alg2=True)
+        self.run_sudoku_solver(puzzle_num=2)
 
     def test_sudoku_04(self) -> None:
-        self.run_sudoku_solver(puzzle_num=3, use_alg2=False)
-
-    def test_sudoku_04_a2(self) -> None:
-        self.run_sudoku_solver(puzzle_num=3, use_alg2=True)
+        self.run_sudoku_solver(puzzle_num=3)
 
     def test_sudoku_05(self) -> None:
-        self.run_sudoku_solver(puzzle_num=4, use_alg2=False)
-
-    def test_sudoku_05_a2(self) -> None:
-        self.run_sudoku_solver(puzzle_num=4, use_alg2=True)
+        self.run_sudoku_solver(puzzle_num=4)
 
     def test_sudoku_06(self) -> None:
-        self.run_sudoku_solver(puzzle_num=5, use_alg2=False)
-
-    def test_sudoku_06_a2(self) -> None:
-        self.run_sudoku_solver(puzzle_num=5, use_alg2=True)
+        self.run_sudoku_solver(puzzle_num=5)
 
     def test_sudoku_07(self) -> None:
-        self.run_sudoku_solver(puzzle_num=6, use_alg2=False)
-
-    def test_sudoku_07_a2(self) -> None:
-        self.run_sudoku_solver(puzzle_num=6, use_alg2=True)
+        self.run_sudoku_solver(puzzle_num=6)
 
     def test_check_valid_suduko(self):
         """Send deliberately invalid suduko boards and check that
@@ -97,7 +76,7 @@ class SudokuSolverTest(unittest.TestCase):
             result = sudoku.SudokuBoard(board_array).check_valid()
             self.assertEqual(valid_board["answer"], result)
 
-    def run_sudoku_solver(self, puzzle_num: int, use_alg2=True):
+    def run_sudoku_solver(self, puzzle_num: int):
         """Runs the 'solve_sudoku' method - in separate method
         to keep it consistent for each test. Outputs details of
         each test to a file.
@@ -106,7 +85,7 @@ class SudokuSolverTest(unittest.TestCase):
         answer = self.config_data["sudoku_puzzle"][puzzle_num]["answer"]
 
         t1 = time.time()
-        test_result = sudoku.solve_sudoku(list(puzzle), use_alg2=use_alg2)
+        test_result = sudoku.solve_sudoku(list(puzzle))
         t2 = time.time()
 
         self.assertEqual(test_result, answer)
@@ -117,7 +96,6 @@ class SudokuSolverTest(unittest.TestCase):
             '"' + puzzle + '"',  # The full puzzle board
             f"{t2-t1:8.5f}",  # Time to solve
             sudoku.difficulty_score,  # Difficulty score
-            use_alg2,  # Algorithm(s) used
             "v" + sudoku.__version__,
         ]  # Version
 
