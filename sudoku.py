@@ -12,7 +12,8 @@ quiet = False
 
 class SudokuBoard:
     def __init__(self, board) -> None:
-        self.board = board
+        self.board = self.array_from_list(board)
+        self.board_stack = []
         self.available_pos_row = [[set() for _ in range(10)] for _ in range(9)]
         self.available_pos_col = [[set() for _ in range(10)] for _ in range(9)]
         self.available_pos_sqr = [[set() for _ in range(10)] for _ in range(9)]
@@ -45,10 +46,11 @@ class SudokuBoard:
                 rcs[int(num)].add(position)
 
     def get_sqr_index(self, position):
-        """Returns the number (0-8) of the 3x3 square for given position
-        numbered as follows:    0 1 2
-                                3 4 5
-                                6 7 8
+        """Identifies which 3x3 square (numbered 0-8) a given position is in:
+        0 1 2
+        3 4 5
+        6 7 8
+        e.g. position 3 will be square 0, 4 in square 1, and 80 in square 8.
         """
         r, c = self.get_index(position)
         return ((r // 3) * 3) + (c // 3)
@@ -136,27 +138,127 @@ class SudokuBoard:
         """Returns board as string"""
         return "".join(self.board.flatten())
 
+    def valid_string(self, board_string: str) -> list:
+        """Reformats a text string as a valid board definition
+        - will remove any characters that are not 0-9
+        - Strings starting with 'sud' interpreted as a standard test
+        Sudoku from sudoku_test.py numbered 01-99 that it then retrieves
+        e.g. sud01 runs the same board as test_sudoku_01
+        """
+        # TODO: move preset detection out of class
+        if board_string[0:3] == "sud":
+            board_string = get_test_sudokus(int(board_string[3:5]) - 1)
+            logging.info(f"[valid_string]standard test Sudoku {board_string[0:5]}")
+        allowed_vals = {str(n) for n in range(10)}
+        board_list = [n for n in board_string if n in allowed_vals]
+        if len(board_list) != 81:
+            return False
+        return board_list
 
-def valid_string(board_string: str) -> list:
-    """Reformats a text string as a valid board definition
-    - will remove any characters that are not 0-9
-    - Strings starting with 'sud' interpreted as a standard test
-      Sudoku from sudoku_test.py numbered 01-99 that it then retrieves
-      e.g. sud01 runs the same board as test_sudoku_01
-    """
-    if board_string[0:3] == "sud":
-        board_string = get_test_sudokus(int(board_string[3:5]) - 1)
-        logging.info(f"[valid_string]standard test Sudoku {board_string[0:5]}")
-    allowed_vals = {str(n) for n in range(10)}
-    board_list = [n for n in board_string if n in allowed_vals]
-    if len(board_list) != 81:
+    def array_from_list(self, board_list):
+        """Returns 1d list as 2d NumPy array"""
+        return np.reshape(board_list, (9, 9))
+
+    def alg1(self):
+        changed = False
+        board_error = False
+        lowest = {"position": 0, "count": 9, "values": {}}
+        for position, num_str in enumerate(self.board.flatten()):
+            if num_str != "0":
+                continue
+            available = self.get_available(position)
+            available_count = len(available)
+
+            if available_count == 0:  # must be an invalid board
+                logging.warning(f"[alg1] available_count == 0 in pos {position}")
+                board_error = True
+                break
+            if available_count == 1:  # must be that number in this position
+                self.update_board(position, available.pop())
+                changed = True
+                logging.debug(
+                    f"[alg1] Assigned {self.get_position(position)}"
+                    f" to position {position}"
+                )
+                # self.update_available(position, board[position])
+            else:
+                if available_count < lowest["count"]:
+                    lowest["count"] = available_count
+                    lowest["position"] = position
+                    lowest["values"] = available.copy()
+                self.update_alg2(position, available)
+
+        return {"changed": changed, "error": board_error, "lowest": lowest}
+
+    def alg2(self):
+        """run the second algorithm - each row, col, sq must have 1 of all 9 numbers"""
+        changed = False
+        for alg2_rcs in (
+            self.available_pos_row,
+            self.available_pos_col,
+            self.available_pos_sqr,
+        ):
+            for rcs in alg2_rcs:
+                for number, available_pos in enumerate(rcs):
+                    if len(available_pos) == 1 and number != "0":
+                        position = available_pos.pop()
+                        self.update_board(position, str(number))
+                        logging.debug(
+                            f"[alg2] Assigned"
+                            f"{self.get_position(position)} to position"
+                            f"{position}"
+                        )
+                        changed = True
+        return changed
+
+    def alg3(self, lowest):
+        """Try each possible alternative value in turn using the board
+        position with fewest alternatives to reduce the amount of recursion
+        Last resort only runs if cannot fill numbers using other methods.
+        """
+        for test_num in lowest["values"]:
+            self.update_board(lowest["position"], test_num)
+            logging.debug(
+                f"[alg3] Trying {test_num}" f'in position {lowest["position"]}'
+            )
+            if solved_bd := self.solve_sudoku(list(self.get_string())):
+                return solved_bd
         return False
-    return board_list
 
+    def solve_sudoku(self) -> list:
+        """Try to solve any Sudoku board, needs to be called for each guess
+        - Iterates through every cell
+        - Removes any values already used in each row, column or square
+        - If only one value possible for a cell - then assign that
+        - If no previous iterations don't find any valid values then:
+        - Try different values
+        """
+        global difficulty_score
+        difficulty_score += 1
+        # sudoku = SudokuBoard(board)
 
-def array_from_list(board_list):
-    """Returns 1d list as 2d NumPy array"""
-    return np.reshape(board_list, (9, 9))
+        logging.debug(f"[solve_sudoku] Entering solve_sudoku.")
+
+        while "0" in self.board:
+            self.reset_alg2()
+            # Alg1
+            result = self.alg1()
+            if result["error"] is True:
+                return False
+            if result["changed"] is True:
+                continue
+            lowest = result["lowest"]
+
+            # Alg 2
+            if self.alg2():
+                continue
+
+            # Alg 3
+            self.alg3(lowest)
+
+        if result := self.check_valid():
+            self.display()
+        return result
 
 
 def get_test_sudokus(puzzle_num: int) -> str:
@@ -165,108 +267,6 @@ def get_test_sudokus(puzzle_num: int) -> str:
     with open("./sudoku_data.json", "r") as f:
         config_data = json.load(f)
     return config_data["sudoku_puzzle"][puzzle_num]["question"]
-
-
-def alg1(sudoku):
-    changed = False
-    board_error = False
-    lowest = {"position": 0, "count": 9, "values": {}}
-    for position, num_str in enumerate(sudoku.board.flatten()):
-        if num_str != "0":
-            continue
-        available = sudoku.get_available(position)
-        available_count = len(available)
-
-        if available_count == 0:  # must be an invalid board
-            logging.warning(f"[alg1] available_count == 0 in pos {position}")
-            board_error = True
-            break
-        if available_count == 1:  # must be that number in this position
-            sudoku.update_board(position, available.pop())
-            changed = True
-            logging.debug(
-                f"[alg1] Assigned {sudoku.get_position(position)}"
-                f" to position {position}"
-            )
-            # sudoku.update_available(position, board[position])
-        else:
-            if available_count < lowest["count"]:
-                lowest["count"] = available_count
-                lowest["position"] = position
-                lowest["values"] = available.copy()
-            sudoku.update_alg2(position, available)
-
-    return {"changed": changed, "error": board_error, "lowest": lowest}
-
-
-def alg2(sudoku):
-    """run the second algorithm - each row, col, sq must have 1 of all 9 numbers"""
-    changed = False
-    for alg2_rcs in (
-        sudoku.available_pos_row,
-        sudoku.available_pos_col,
-        sudoku.available_pos_sqr,
-    ):
-        for rcs in alg2_rcs:
-            for number, available_pos in enumerate(rcs):
-                if len(available_pos) == 1 and number != "0":
-                    position = available_pos.pop()
-                    sudoku.update_board(position, str(number))
-                    logging.debug(
-                        f"[alg2] Assigned"
-                        f"{sudoku.get_position(position)} to position"
-                        f"{position}"
-                    )
-                    changed = True
-    return changed
-
-
-def alg3(sudoku, lowest):
-    """Try each possible alternative value in turn using the board
-    position with fewest alternatives to reduce the amount of recursion
-    Last resort only runs if cannot fill numbers using other methods.
-    """
-    for test_num in lowest["values"]:
-        sudoku.update_board(lowest["position"], test_num)
-        logging.debug(f"[alg3] Trying {test_num}" f'in position {lowest["position"]}')
-        if solved_bd := solve_sudoku(list(sudoku.get_string())):
-            return solved_bd
-    return False
-
-
-def solve_sudoku(board) -> list:
-    """Try to solve any Sudoku board, needs to be called for each guess
-    - Iterates through every cell
-    - Removes any values already used in each row, column or square
-    - If only one value possible for a cell - then assign that
-    - If no previous iterations don't find any valid values then:
-    - Try different values
-    """
-    global difficulty_score
-    difficulty_score += 1
-    sudoku = SudokuBoard(array_from_list(board))
-    logging.debug(f"[solve_sudoku] Entering solve_sudoku.")
-
-    while "0" in sudoku.board:
-        sudoku.reset_alg2()
-        # Alg1
-        result = alg1(sudoku)
-        if result["error"] is True:
-            return False
-        if result["changed"] is True:
-            continue
-        lowest = result["lowest"]
-
-        # Alg 2
-        if alg2(sudoku):
-            continue
-
-        # Alg 3
-        return alg3(sudoku, lowest)
-
-    if result := sudoku.check_valid():
-        sudoku.display()
-    return result
 
 
 def main():

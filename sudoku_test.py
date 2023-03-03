@@ -85,7 +85,8 @@ class SudokuSolverTest(unittest.TestCase):
         answer = self.config_data["sudoku_puzzle"][puzzle_num]["answer"]
 
         t1 = time.time()
-        test_result = sudoku.solve_sudoku(list(puzzle))
+        board = sudoku.SudokuBoard(list(puzzle))
+        test_result = board.solve_sudoku()
         t2 = time.time()
 
         self.assertEqual(test_result, answer)
