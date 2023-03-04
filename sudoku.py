@@ -6,6 +6,7 @@ from rich.console import Console
 from rich.theme import Theme
 from rich.table import Table
 from rich.panel import Panel
+from rich.columns import Columns
 from rich import box
 
 from sudoku_solver import SudokuSolver
@@ -59,6 +60,7 @@ def display_board_rich(
             "input_number": "bold red on white",
             "standard": "bold black on white",
             "data": "blue on white",
+            "title": "underline black on white",
         }
     )
     console = Console(theme=my_theme, width=28, style="standard")
@@ -92,14 +94,19 @@ def display_board_rich(
     sqr.append(text)
     grid.add_row(sqr[0], sqr[1], sqr[2])
 
+    print_title = [
+        "[title]Sudoku Solver",
+    ]
+    column = Columns(print_title, expand=True, align="center")
+    console.print(column)
     console.print(grid)
     console.print(
         Panel(
-            f"Speed: [data]{1000*(solve_time):5.1f} [standard]ms\nDifficulty: [data]{difficulty}",
+            f"Speed: [data]{1000*(solve_time):5.1f} [standard]ms\n"
+            f"Difficulty: [data]{difficulty}",
             title="Statistics",
         )
     )
-    # console.print(Panel(f"[data]{difficulty}", title="Difficulty"))
 
 
 def parse_commandline_args():
