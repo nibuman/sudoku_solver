@@ -2,6 +2,11 @@ import json
 import logging
 import time
 import argparse
+from rich.console import Console
+from rich.theme import Theme
+from rich.table import Table
+from rich.panel import Panel
+from rich import box
 
 from sudoku_solver import SudokuSolver
 
@@ -19,7 +24,8 @@ def valid_string(board_string: str) -> list:
     - will remove any characters that are not 0-9
     Checks that final list is the correct length (81)
     """
-
+    if board_string[:6] == "preset":
+        return get_test_sudokus(int(board_string[6]))
     allowed_vals = {str(n) for n in range(10)}
     board_list = [n for n in board_string if n in allowed_vals]
     if len(board_list) != 81:
@@ -28,19 +34,87 @@ def valid_string(board_string: str) -> list:
     return board_list
 
 
-def main():
+def display_board_plain(board: str, solve_time: float, difficulty: int) -> None:
+    """Display plain text Sudoku board in terminal"""
+    output = ""
+    for idx, num in enumerate(board):
+        if idx % 27 == 0:  # A blank line after every 3 rows
+            output += "\n\n"
+        elif idx % 9 == 0:  # A newline at the end of every row
+            output += "\n"
+        elif idx % 3 == 0:  # A space between every 3 numbers
+            output += " "
+        output += num
+    output += "\n"
+    print(output)
+    print(f"Solved in (ms): {1000*(solve_time):5.1f}\n" f"difficulty: {difficulty}")
+
+
+def display_board_rich(
+    input_board: str, solved_board: str, solve_time: float, difficulty: int
+) -> None:
+    """Display a formatted Sudoku board in the terminal using the rich library"""
+    my_theme = Theme(
+        {
+            "input_number": "bold red on white",
+            "standard": "bold black on white",
+            "data": "blue on white",
+        }
+    )
+    console = Console(theme=my_theme, width=28, style="standard")
+    grid = Table(box=box.MINIMAL, show_header=False, expand=True)
+    for _ in range(3):
+        grid.add_column()
+    text = ""
+    sqr = []
+    for idx, (input_num, solved_num) in enumerate(zip(input_board, solved_board)):
+        if (
+            idx % 3 == 0 and idx
+        ):  # A space between every 3 numbers (but not before row 0)
+            text += " "
+            sqr.append(text)
+            text = ""
+        if idx % 9 == 0 and idx:  # Add completed row to grid
+            grid.add_row(sqr[0], sqr[1], sqr[2])
+            sqr.clear()
+        if idx % 27 == 0 and idx:  # Add a line (new section) after every 3 rows
+            grid.add_section()
+
+        # Numbers that are in the input board display in a differnt style
+        if int(input_num):
+            this_theme = "[input_number]"
+        else:
+            this_theme = "[standard]"
+        text += f"{this_theme} {solved_num}"
+
+    # Just need to complete the last row
+    text += " "
+    sqr.append(text)
+    grid.add_row(sqr[0], sqr[1], sqr[2])
+
+    console.print(grid)
+    console.print(
+        Panel(
+            f"Speed: [data]{1000*(solve_time):5.1f} [standard]ms\nDifficulty: [data]{difficulty}",
+            title="Statistics",
+        )
+    )
+    # console.print(Panel(f"[data]{difficulty}", title="Difficulty"))
+
+
+def parse_commandline_args():
     parser = argparse.ArgumentParser(
         prog="sudoku", description="Solve any Sudoku puzzle"
     )
-    parse_group = parser.add_mutually_exclusive_group(required=False)
-    parse_group.add_argument(
+    input_parse_group = parser.add_mutually_exclusive_group(required=False)
+    input_parse_group.add_argument(
         "-s",
         "--sudoku_string",
         action="store",
         help="use supplied Sudoku string",
         type=str,
     )
-    parse_group.add_argument(
+    input_parse_group.add_argument(
         "-p",
         "--preset",
         help="use preset Sudoku board 1-6",
@@ -54,10 +128,24 @@ def main():
         action="version",
         version="%(prog)s " + SudokuSolver.__version__,
     )
-    parser.add_argument(
-        "-q", "--quiet", help="display only output string", action="store_true"
+    output_parse_group = parser.add_mutually_exclusive_group(required=False)
+    output_parse_group.add_argument(
+        "-m",
+        "--minimal",
+        help="display only unformatted output string",
+        action="store_true",
     )
-    args = parser.parse_args()
+    output_parse_group.add_argument(
+        "-r",
+        "--rich",
+        help="display solution in rich text",
+        action="store_true",
+    )
+    return parser.parse_args()
+
+
+def main():
+    args = parse_commandline_args()
 
     logging.basicConfig(
         filename="sudoku_solver.log",
@@ -68,37 +156,37 @@ def main():
 
     logging.info("Started")
 
-    quiet = args.quiet
-
     if args.preset is not None:
         sudoku_input = get_test_sudokus(args.preset)
     elif args.sudoku_string:
         sudoku_input = args.sudoku_string
     else:
         sudoku_input = input("Sudoku string: ")
+        args.rich = True
     try:
-        board_list = valid_string(sudoku_input)
+        sudoku_input = valid_string(sudoku_input)
     except ValueError:
         logging.critical("Board string was not valid, exiting")
         exit("Invalid board")
 
-    logging.info(f'Board to solve:{"".join(board_list)}')
-    board = SudokuSolver(list(sudoku_input))
+    logging.info(f"Board to solve:{sudoku_input}")
+    solver = SudokuSolver(sudoku_input)
 
     t1 = time.perf_counter()
-    if solved_board := board.solve_sudoku():
+    if solved_board := solver.solve_sudoku():
         t2 = time.perf_counter()
-        logging.info(f"Board solved in {t2-t1} s")
+        solve_time = t2 - t1
+        difficulty = solver.difficulty_score
+        logging.info(f"Board solved in {solve_time} s")
         logging.info(f"Solution: {solved_board}")
 
-        if quiet:
+        if args.minimal:
             print(solved_board)
+        elif args.rich:
+            display_board_rich(sudoku_input, solved_board, solve_time, difficulty)
         else:
-            print(
-                f"board: {solved_board}\n"
-                f"Solved in (ms): {1000*(t2 - t1):5.1f}\n"
-                f"difficulty: {board.difficulty_score}"
-            )
+            display_board_plain(solved_board, solve_time, difficulty)
+
     else:
         logging.warning("board: 0")
 
