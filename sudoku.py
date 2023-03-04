@@ -68,8 +68,8 @@ def main():
 
     logging.info("Started")
 
-    if args.quiet:
-        quiet = True
+    quiet = args.quiet
+
     if args.preset is not None:
         sudoku_input = get_test_sudokus(args.preset)
     elif args.sudoku_string:

@@ -12,6 +12,110 @@ class SudokuSolverTest(unittest.TestCase):
             self.config_data = json.load(f)
         return super().setUp()
 
+    def test_get_index(self) -> None:
+        board = "".join([str(row_num) for row_num in range(9) for _ in range(9)])
+        solver = SudokuSolver(board)
+
+        position = 0
+        expected_answer = (0, 0)
+        answer = solver.get_index(position)
+        self.assertEqual(answer, expected_answer)
+
+        position = 1
+        expected_answer = (0, 1)
+        answer = solver.get_index(position)
+        self.assertEqual(answer, expected_answer)
+
+        position = 9
+        expected_answer = (1, 0)
+        answer = solver.get_index(position)
+        self.assertEqual(answer, expected_answer)
+
+        position = 20
+        expected_answer = (2, 2)
+        answer = solver.get_index(position)
+        self.assertEqual(answer, expected_answer)
+
+    def test_get_row(self) -> None:
+        board = "".join([str(row_num) for row_num in range(9) for _ in range(9)])
+        solver = SudokuSolver(board)
+
+        position = 1
+        expected_answer = {"0"}
+        answer = solver.get_row(position)
+        self.assertEqual(answer, expected_answer)
+
+        position = 9
+        expected_answer = {"1"}
+        answer = solver.get_row(position)
+        self.assertEqual(answer, expected_answer)
+
+        position = 80
+        expected_answer = {"8"}
+        answer = solver.get_row(position)
+        self.assertEqual(answer, expected_answer)
+
+        board = "".join([str(row_num) for _ in range(9) for row_num in range(9)])
+        solver = SudokuSolver(board)
+
+        full_set = {str(n) for n in range(9)}
+        expected_answer = full_set
+        position = 80
+        answer = solver.get_row(position)
+        self.assertEqual(answer, expected_answer)
+
+    def test_get_col(self):
+        board = "".join([str(row_num) for row_num in range(9) for _ in range(9)])
+        solver = SudokuSolver(board)
+
+        position = 1
+        full_set = {str(n) for n in range(9)}
+        expected_answer = full_set
+        answer = solver.get_col(position)
+        self.assertEqual(answer, expected_answer)
+
+        board = "".join([str(row_num) for _ in range(9) for row_num in range(9)])
+        solver = SudokuSolver(board)
+
+        position = 1
+        expected_answer = {"1"}
+        answer = solver.get_col(position)
+        self.assertEqual(answer, expected_answer)
+
+    def test_get_sqr(self) -> None:
+        board = "".join([str(row_num) for row_num in range(9) for _ in range(9)])
+        solver = SudokuSolver(board)
+
+        position = 1
+        expected_answer = {"0", "1", "2"}
+        answer = solver.get_sqr(position)
+        self.assertEqual(answer, expected_answer)
+
+        position = 3
+        expected_answer = {"0", "1", "2"}
+        answer = solver.get_sqr(position)
+        self.assertEqual(answer, expected_answer)
+
+        position = 13
+        expected_answer = {"0", "1", "2"}
+        answer = solver.get_sqr(position)
+        self.assertEqual(answer, expected_answer)
+
+        position = 23
+        expected_answer = {"0", "1", "2"}
+        answer = solver.get_sqr(position)
+        self.assertEqual(answer, expected_answer)
+
+        position = 28
+        expected_answer = {"3", "4", "5"}
+        answer = solver.get_sqr(position)
+        self.assertEqual(answer, expected_answer)
+
+        position = 80
+        expected_answer = {"6", "7", "8"}
+        answer = solver.get_sqr(position)
+        self.assertEqual(answer, expected_answer)
+
     def test_sudoku_0(self) -> None:
         self.run_sudoku_solver(puzzle_num=0)
 
@@ -47,7 +151,7 @@ class SudokuSolverTest(unittest.TestCase):
         valid_boards = self.config_data["sudoku_puzzle"]
         for valid_board in valid_boards:
             result = SudokuSolver(list(valid_board["answer"])).check_valid()
-            self.assertEqual(valid_board["answer"], result)
+            self.assertEqual(True, result)
 
     def run_sudoku_solver(self, puzzle_num: int):
         """Runs the 'solve_sudoku' method - in separate method

@@ -1,11 +1,8 @@
-import numpy as np
-
-
 class SudokuSolver:
-    __version__ = "6.3"
+    __version__ = "7.1"
 
-    def __init__(self, board) -> None:
-        self.board = self.array_from_list(board)
+    def __init__(self, board: str) -> None:
+        self.board = list(board)
         self.guess_stack = []
         self.initialise_available_pos()
         self.difficulty_score = 0
@@ -61,19 +58,20 @@ class SudokuSolver:
     def get_row(self, position: int) -> set:
         """Return set of numbers in row at given position"""
         r, _ = self.get_index(position)
-        return set(self.board[r, :])
+        row_start = r * 9
+        return set(self.board[row_start : row_start + 9])
 
     def get_col(self, position: int) -> set:
         """Return set of numbers in column at given position"""
         _, c = self.get_index(position)
-        return set(self.board[:, c])
+        return {self.board[pos] for pos in range(c, 81, 9)}
 
     def get_sqr(self, position: int) -> set:
         """Return set of numbers in square at given position"""
         r, c = self.get_index(position)
-        sq_row = (r // 3) * 3
-        sq_col = (c // 3) * 3
-        return set(self.board[sq_row : sq_row + 3, sq_col : sq_col + 3].flatten())
+        sq_start_pos = (r // 3) * 27 + (c // 3) * 3
+        offsets = (0, 1, 2, 9, 10, 11, 18, 19, 20)
+        return {self.board[sq_start_pos + offset] for offset in offsets}
 
     def get_not_available(self, position: int) -> set:
         """Return set of numbers that are not available in given position"""
@@ -90,13 +88,11 @@ class SudokuSolver:
 
     def update_board(self, position: int, number: str) -> None:
         """Places a number in the board"""
-        r, c = self.get_index(position)
-        self.board[r, c] = number
+        self.board[position] = number
 
     def get_position(self, position: int) -> str:
         """Returns number at given position in board"""
-        r, c = self.get_index(position)
-        return self.board[r, c]
+        return self.board[position]
 
     def check_valid(self) -> bool:
         """Checks whether sudoku board is valid by definition
@@ -117,21 +113,13 @@ class SudokuSolver:
         for i in range(0, 81, 12):
             if self.get_sqr(i) != valid_set:
                 return False
-        return self.get_string()
-
-    def get_string(self) -> str:
-        """Returns board as string"""
-        return "".join(self.board.flatten())
-
-    def array_from_list(self, board_list):
-        """Returns 1d list as 2d NumPy array"""
-        return np.reshape(board_list, (9, 9))
+        return True
 
     def alg1(self):
         changed = False
         board_error = False
         lowest = {"position": 0, "count": 9, "values": {}}
-        for position, num_str in enumerate(self.board.flatten()):
+        for position, num_str in enumerate(self.board):
             if num_str != "0":
                 continue
             available = self.get_available(position)
@@ -143,7 +131,7 @@ class SudokuSolver:
             if available_count == 1:  # must be that number in this position
                 self.update_board(position, available.pop())
                 changed = True
-                # self.update_available(position, board[position])
+
             else:
                 if available_count < lowest["count"]:
                     lowest["count"] = available_count
@@ -163,7 +151,7 @@ class SudokuSolver:
         ):
             for rcs in alg2_rcs:
                 for number, available_pos in enumerate(rcs):
-                    if len(available_pos) == 1 and number != "0":
+                    if len(available_pos) == 1 and number != 0:
                         position = available_pos.pop()
                         self.update_board(position, str(number))
                         changed = True
@@ -171,8 +159,7 @@ class SudokuSolver:
 
     def generate_test_board(self, position, number):
         test_board = self.board.copy()
-        r, c = self.get_index(position)
-        test_board[r, c] = number
+        test_board[position] = number
         return test_board
 
     def alg3(self, lowest=None, invalid_board=False):
@@ -222,4 +209,6 @@ class SudokuSolver:
             if not result:
                 return False
 
-        return self.check_valid()
+        if not self.check_valid():
+            return "Error: Could not solve"
+        return "".join(self.board)
