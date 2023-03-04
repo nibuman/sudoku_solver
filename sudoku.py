@@ -1,4 +1,4 @@
-__version__ = "5"
+__version__ = "6.2"
 
 import json
 import logging
@@ -6,14 +6,18 @@ import time
 import argparse
 import numpy as np
 
-difficulty_score = 0
+
 quiet = False
 
 
 class SudokuBoard:
     def __init__(self, board) -> None:
         self.board = self.array_from_list(board)
-        self.board_stack = []
+        self.guess_stack = []
+        self.initialise_available_pos()
+        self.difficulty_score = 0
+
+    def initialise_available_pos(self):
         self.available_pos_row = [[set() for _ in range(10)] for _ in range(9)]
         self.available_pos_col = [[set() for _ in range(10)] for _ in range(9)]
         self.available_pos_sqr = [[set() for _ in range(10)] for _ in range(9)]
@@ -138,23 +142,6 @@ class SudokuBoard:
         """Returns board as string"""
         return "".join(self.board.flatten())
 
-    def valid_string(self, board_string: str) -> list:
-        """Reformats a text string as a valid board definition
-        - will remove any characters that are not 0-9
-        - Strings starting with 'sud' interpreted as a standard test
-        Sudoku from sudoku_test.py numbered 01-99 that it then retrieves
-        e.g. sud01 runs the same board as test_sudoku_01
-        """
-        # TODO: move preset detection out of class
-        if board_string[0:3] == "sud":
-            board_string = get_test_sudokus(int(board_string[3:5]) - 1)
-            logging.info(f"[valid_string]standard test Sudoku {board_string[0:5]}")
-        allowed_vals = {str(n) for n in range(10)}
-        board_list = [n for n in board_string if n in allowed_vals]
-        if len(board_list) != 81:
-            return False
-        return board_list
-
     def array_from_list(self, board_list):
         """Returns 1d list as 2d NumPy array"""
         return np.reshape(board_list, (9, 9))
@@ -211,19 +198,29 @@ class SudokuBoard:
                         changed = True
         return changed
 
-    def alg3(self, lowest):
+    def generate_test_board(self, position, number):
+        test_board = self.board.copy()
+        r, c = self.get_index(position)
+        test_board[r, c] = number
+        return test_board
+
+    def alg3(self, lowest=None, invalid_board=False):
         """Try each possible alternative value in turn using the board
         position with fewest alternatives to reduce the amount of recursion
         Last resort only runs if cannot fill numbers using other methods.
         """
-        for test_num in lowest["values"]:
-            self.update_board(lowest["position"], test_num)
-            logging.debug(
-                f"[alg3] Trying {test_num}" f'in position {lowest["position"]}'
-            )
-            if solved_bd := self.solve_sudoku(list(self.get_string())):
-                return solved_bd
-        return False
+        if not invalid_board:
+            for test_num in lowest["values"]:
+                test_board = self.generate_test_board(lowest["position"], test_num)
+                self.guess_stack.append(test_board)
+        try:
+            self.board = self.guess_stack.pop()
+            self.difficulty_score += 1
+
+        except IndexError:
+            return False
+        self.initialise_available_pos()
+        return True
 
     def solve_sudoku(self) -> list:
         """Try to solve any Sudoku board, needs to be called for each guess
@@ -233,28 +230,30 @@ class SudokuBoard:
         - If no previous iterations don't find any valid values then:
         - Try different values
         """
-        global difficulty_score
-        difficulty_score += 1
+
+        board_error = False
         # sudoku = SudokuBoard(board)
 
-        logging.debug(f"[solve_sudoku] Entering solve_sudoku.")
+        logging.debug("[solve_sudoku] Entering solve_sudoku.")
 
         while "0" in self.board:
             self.reset_alg2()
             # Alg1
             result = self.alg1()
-            if result["error"] is True:
-                return False
+            board_error = result["error"]
             if result["changed"] is True:
                 continue
             lowest = result["lowest"]
 
             # Alg 2
-            if self.alg2():
-                continue
+            if not board_error:
+                if self.alg2():
+                    continue
 
             # Alg 3
-            self.alg3(lowest)
+            result = self.alg3(lowest, invalid_board=board_error)
+            if not result:
+                return False
 
         if result := self.check_valid():
             self.display()
@@ -269,9 +268,26 @@ def get_test_sudokus(puzzle_num: int) -> str:
     return config_data["sudoku_puzzle"][puzzle_num]["question"]
 
 
+def valid_string(board_string: str) -> list:
+    """Reformats a text string as a valid board definition
+    - will remove any characters that are not 0-9
+    - Strings starting with 'sud' interpreted as a standard test
+    Sudoku from sudoku_test.py numbered 01-99 that it then retrieves
+    e.g. sud01 runs the same board as test_sudoku_01
+    """
+    # TODO: move preset detection out of class
+    if board_string[0:3] == "sud":
+        board_string = get_test_sudokus(int(board_string[3:5]) - 1)
+        logging.info(f"[valid_string]standard test Sudoku {board_string[0:5]}")
+    allowed_vals = {str(n) for n in range(10)}
+    board_list = [n for n in board_string if n in allowed_vals]
+    if len(board_list) != 81:
+        return False
+    return board_list
+
+
 def main():
     global quiet
-    global difficulty_score
 
     parser = argparse.ArgumentParser(
         prog="sudoku", description="Solve any Sudoku puzzle"
@@ -322,9 +338,10 @@ def main():
         logging.critical("Board string was not valid, exiting")
         exit()
     logging.info(f'Board to solve:{"".join(board_list)}')
+    board = SudokuBoard(list(sudoku_input))
 
     t1 = time.perf_counter()
-    if solved_board := solve_sudoku(board_list):
+    if solved_board := board.solve_sudoku():
         t2 = time.perf_counter()
         logging.info(f"Board solved in {t2-t1} s")
         logging.info(f"Solution: {solved_board}")
@@ -335,7 +352,7 @@ def main():
             print(
                 f"board: {solved_board}\n"
                 f"Solved in (ms): {1000*(t2 - t1):5.1f}\n"
-                f"difficulty: {difficulty_score}"
+                f"difficulty: {board.difficulty_score}"
             )
     else:
         logging.warning("board: 0")

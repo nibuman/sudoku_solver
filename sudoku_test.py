@@ -66,14 +66,12 @@ class SudokuSolverTest(unittest.TestCase):
         """
         invalid_boards = self.config_data["invalid_boards"]
         for invalid_board in invalid_boards:
-            board_array = sudoku.array_from_list(list(invalid_board))
-            result = sudoku.SudokuBoard(board_array).check_valid()
+            result = sudoku.SudokuBoard(list(invalid_board)).check_valid()
             self.assertEqual(False, result)
 
         valid_boards = self.config_data["sudoku_puzzle"]
         for valid_board in valid_boards:
-            board_array = sudoku.array_from_list(list(valid_board["answer"]))
-            result = sudoku.SudokuBoard(board_array).check_valid()
+            result = sudoku.SudokuBoard(list(valid_board["answer"])).check_valid()
             self.assertEqual(valid_board["answer"], result)
 
     def run_sudoku_solver(self, puzzle_num: int):
@@ -96,7 +94,8 @@ class SudokuSolverTest(unittest.TestCase):
             datetime.datetime.now(),  # Current date and time
             '"' + puzzle + '"',  # The full puzzle board
             f"{t2-t1:8.5f}",  # Time to solve
-            sudoku.difficulty_score,  # Difficulty score
+            board.difficulty_score,  # Difficulty score
+            True,
             "v" + sudoku.__version__,
         ]  # Version
 
