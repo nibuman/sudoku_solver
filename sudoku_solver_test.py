@@ -96,14 +96,12 @@ class SudokuSolverTest(unittest.TestCase):
             f"{t2-t1:8.5f}",  # Time to solve
             board.difficulty_score,  # Difficulty score
             True,
-            "v" + sudoku.__version__,
+            "v" + SudokuSolver.__version__,
         ]  # Version
 
         with open("sudoku_tst_scores.csv", "a", encoding="UTF8") as f:
             writer = csv.writer(f)
             writer.writerow(csv_row)
-
-        sudoku.difficulty_score = 0
 
 
 if __name__ == "__main__":
