@@ -1,4 +1,3 @@
-import logging
 import numpy as np
 
 
@@ -139,16 +138,11 @@ class SudokuSolver:
             available_count = len(available)
 
             if available_count == 0:  # must be an invalid board
-                logging.warning(f"[alg1] available_count == 0 in pos {position}")
                 board_error = True
                 break
             if available_count == 1:  # must be that number in this position
                 self.update_board(position, available.pop())
                 changed = True
-                logging.debug(
-                    f"[alg1] Assigned {self.get_position(position)}"
-                    f" to position {position}"
-                )
                 # self.update_available(position, board[position])
             else:
                 if available_count < lowest["count"]:
@@ -172,11 +166,6 @@ class SudokuSolver:
                     if len(available_pos) == 1 and number != "0":
                         position = available_pos.pop()
                         self.update_board(position, str(number))
-                        logging.debug(
-                            f"[alg2] Assigned"
-                            f"{self.get_position(position)} to position"
-                            f"{position}"
-                        )
                         changed = True
         return changed
 
@@ -212,11 +201,7 @@ class SudokuSolver:
         - If no previous iterations don't find any valid values then:
         - Try different values
         """
-
         board_error = False
-        # sudoku = SudokuBoard(board)
-
-        logging.debug("[solve_sudoku] Entering solve_sudoku.")
 
         while "0" in self.board:
             self.reset_alg2()
