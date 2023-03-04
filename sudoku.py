@@ -7,6 +7,7 @@ from rich.theme import Theme
 from rich.table import Table
 from rich.panel import Panel
 from rich.columns import Columns
+from rich.prompt import Prompt, Confirm, IntPrompt
 from rich import box
 
 from sudoku_solver import SudokuSolver
@@ -25,8 +26,6 @@ def valid_string(board_string: str) -> list:
     - will remove any characters that are not 0-9
     Checks that final list is the correct length (81)
     """
-    if board_string[:6] == "preset":
-        return get_test_sudokus(int(board_string[6]))
     allowed_vals = {str(n) for n in range(10)}
     board_list = [n for n in board_string if n in allowed_vals]
     if len(board_list) != 81:
@@ -116,7 +115,7 @@ def parse_commandline_args():
     input_parse_group = parser.add_mutually_exclusive_group(required=False)
     input_parse_group.add_argument(
         "-s",
-        "--sudoku_string",
+        "--sudoku-string",
         action="store",
         help="use supplied Sudoku string",
         type=str,
@@ -143,12 +142,31 @@ def parse_commandline_args():
         action="store_true",
     )
     output_parse_group.add_argument(
+        "-u",
+        "--unformatted",
+        help="display solution in unformatted plain text",
+        action="store_true",
+    )
+    output_parse_group.add_argument(
         "-r",
         "--rich",
         help="display solution in rich text",
         action="store_true",
     )
     return parser.parse_args()
+
+
+def get_user_input() -> str:
+    if Confirm.ask("Use a preset Sudoku board?", default="y", show_default=True):
+        preset = IntPrompt.ask(
+            "Enter preset number",
+            choices=["0", "1", "2", "3", "4", "5", "6"],
+            default=0,
+            show_default=True,
+        )
+        return get_test_sudokus(preset)
+    else:
+        return Prompt.ask("Enter Sudoku board")
 
 
 def main():
@@ -168,8 +186,7 @@ def main():
     elif args.sudoku_string:
         sudoku_input = args.sudoku_string
     else:
-        sudoku_input = input("Sudoku string: ")
-        args.rich = True
+        sudoku_input = get_user_input()
     try:
         sudoku_input = valid_string(sudoku_input)
     except ValueError:
@@ -189,10 +206,10 @@ def main():
 
         if args.minimal:
             print(solved_board)
-        elif args.rich:
-            display_board_rich(sudoku_input, solved_board, solve_time, difficulty)
-        else:
+        elif args.unformatted:
             display_board_plain(solved_board, solve_time, difficulty)
+        else:
+            display_board_rich(sudoku_input, solved_board, solve_time, difficulty)
 
     else:
         logging.warning("board: 0")

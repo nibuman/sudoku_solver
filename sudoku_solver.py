@@ -173,10 +173,10 @@ class SudokuSolver:
                 self.guess_stack.append(test_board)
         try:
             self.board = self.guess_stack.pop()
-            self.difficulty_score += 1
-
         except IndexError:
             return False
+
+        self.difficulty_score += 1
         self.initialise_available_pos()
         return True
 
