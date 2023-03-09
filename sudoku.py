@@ -2,6 +2,7 @@ import json
 import logging
 import time
 import argparse
+import random
 from rich.console import Console
 from rich.theme import Theme
 from rich.table import Table
@@ -31,6 +32,7 @@ class SudokuBoardDisplay:
                 "standard": "bold black on white",
                 "data": "blue on white",
                 "title": "underline black on white",
+                "empty_pos": "grey50 on white",
             }
         )
 
@@ -64,6 +66,7 @@ class SudokuBoardDisplay:
         title = Align("[title]Sudoku Solver[/title]", align="center")
 
         # Sudoku grid
+        self.display_positions = self.all_positions
         grid = self.rich_sudoku_grid()
 
         # Statistics panel
@@ -89,12 +92,16 @@ class SudokuBoardDisplay:
         title = Align("[title]Sudoku Solver[/title]", align="center", style="standard")
 
         # Sudoku grid
-        grid = self.rich_sudoku_grid()
+        self.display_positions = {
+            idx for idx, num in enumerate(self.input_board) if int(num)
+        }
+        self.remaining_positions = self.all_positions.difference(self.display_positions)
+        grid = self.rich_sudoku_grid(empty_pos=lambda: " ")
         grid.style = "standard"
+
         # Statistics panel
         statistics = Panel(
-            f"Speed: [data]{1000*(self.solve_time):5.1f} [standard]ms\n"
-            f"Difficulty: [data]{self.difficulty}[/data]",
+            "Speed:     ms\n" f"Difficulty: ",
             title="Statistics",
             style="standard",
         )
@@ -109,17 +116,36 @@ class SudokuBoardDisplay:
             layout,
             console=console,
             screen=False,
-            refresh_per_second=4,
-        ) as live:  # update 4 times a second to feel fluid
+            refresh_per_second=24,
+        ):  # update 4 times a second to feel fluid
             # live.console.print(layout)
-            time.sleep(1)
+            time.sleep(0.5)
             title = Align(
                 "[title]Sudoku Solved[/title]", align="center", style="standard"
             )
+            while self.remaining_positions:
+                next_pos = random.choice(list(self.remaining_positions))
+                self.remaining_positions.discard(next_pos)
+                self.display_positions.add(next_pos)
+                grid = self.rich_sudoku_grid(
+                    empty_pos=lambda: random.choice(list(range(1, 10)))
+                )
+                layout["grid"].update(grid)
+                time.sleep(0.05)
+
+                # Statistics panel
+            statistics = Panel(
+                f"[standard]Speed: [data]{1000*(self.solve_time):5.1f} [standard]ms\n"
+                f"[standard]Difficulty: [data]{self.difficulty}[/data]",
+                title="Statistics",
+                style="standard",
+            )
+            layout["stats"].update(statistics)
+            time.sleep(0.5)
             layout["title"].update(title)
             time.sleep(2)
 
-    def rich_sudoku_grid(self):
+    def rich_sudoku_grid(self, empty_pos=None):
         grid = Table(
             box=box.MINIMAL,
             show_header=False,
@@ -144,7 +170,7 @@ class SudokuBoardDisplay:
                 sqr.clear()
             if idx % 27 == 0 and idx:  # Add a line (new section) after every 3 rows
                 grid.add_section()
-            cols.append(self.grid_numbers(input_num, solved_num))
+            cols.append(self.grid_numbers(input_num, solved_num, idx, empty_pos))
         # Just need to complete the last row
         sqr.append(Columns(cols, padding=(0, 1)))
         self.add_rows_to_grid(grid, sqr)
@@ -158,13 +184,17 @@ class SudokuBoardDisplay:
             style="standard",
         )
 
-    def grid_numbers(self, input_num, solved_num):
+    def grid_numbers(self, input_num, solved_num, idx: int, empty_pos=None):
         # Numbers that are in the input board display in a differnt style
-        if int(input_num):
-            style = "input_number"
+        if idx in self.display_positions:
+            if int(input_num):
+                style = "input_number"
 
+            else:
+                style = "standard"
         else:
-            style = "standard"
+            solved_num = empty_pos()
+            style = "empty_pos"
         return f"[{style}]{solved_num}[/{style}]"
 
 
@@ -268,6 +298,7 @@ def main():
 
     logging.info("Started")
 
+    # Choose input
     if args.preset is not None:
         sudoku_input = get_test_sudokus(args.preset)
     elif args.sudoku_string:
@@ -291,6 +322,7 @@ def main():
         logging.info(f"Board solved in {solve_time} s")
         logging.info(f"Solution: {solved_board}")
 
+        # Choose output style
         board = SudokuBoardDisplay(sudoku_input, solved_board, solve_time, difficulty)
         if args.minimal:
             board.display_minimal()
