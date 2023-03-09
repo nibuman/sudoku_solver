@@ -7,10 +7,165 @@ from rich.theme import Theme
 from rich.table import Table
 from rich.panel import Panel
 from rich.columns import Columns
+from rich.align import Align
 from rich.prompt import Prompt, Confirm, IntPrompt
+from rich.live import Live
 from rich import box
-
+from rich.layout import Layout
 from sudoku_solver import SudokuSolver
+
+
+class SudokuBoardDisplay:
+    def __init__(
+        self, input_board: str, solved_board: str, solve_time: float, difficulty: int
+    ) -> None:
+        self.input_board = input_board
+        self.solved_board = solved_board
+        self.all_positions = set(range(81))
+        self.display_positions = set()
+        self.solve_time = solve_time
+        self.difficulty = difficulty
+        self.theme = Theme(
+            {
+                "input_number": "bold red on white",
+                "standard": "bold black on white",
+                "data": "blue on white",
+                "title": "underline black on white",
+            }
+        )
+
+    def display_minimal(self) -> None:
+        print(self.solved_board)
+
+    def display_plain(self) -> None:
+        """Display plain text Sudoku board in terminal"""
+        output = ""
+        for idx, num in enumerate(self.solved_board):
+            if idx % 27 == 0:  # A blank line after every 3 rows
+                output += "\n\n"
+            elif idx % 9 == 0:  # A newline at the end of every row
+                output += "\n"
+            elif idx % 3 == 0:  # A space between every 3 numbers
+                output += " "
+            output += num
+        output += "\n"
+        print(output)
+        print(
+            f"Solved in (ms): {1000*(self.solve_time):5.1f}\n"
+            f"difficulty: {self.difficulty}"
+        )
+
+    def display_rich_static(self) -> None:
+        """Display a formatted Sudoku board in the terminal using the rich library"""
+        console = Console(theme=self.theme, height=18, width=30, style="standard")
+        layout = Layout()
+
+        # Title
+        title = Align("[title]Sudoku Solver[/title]", align="center")
+
+        # Sudoku grid
+        grid = self.rich_sudoku_grid()
+
+        # Statistics panel
+        statistics = Panel(
+            f"Speed: [data]{1000*(self.solve_time):5.1f} [standard]ms\n"
+            f"Difficulty: [data]{self.difficulty}[/data]",
+            title="Statistics",
+        )
+
+        layout.split_column(
+            Layout(title, name="title", size=1),
+            Layout(grid, name="grid", size=13),
+            Layout(statistics, name="stats", size=4),
+        )
+        console.print(layout)
+
+    def display_rich_animated(self) -> None:
+        """Display a formatted Sudoku board in the terminal using the rich library"""
+        console = Console(theme=self.theme, height=18, width=28, style="standard")
+        layout = Layout()
+
+        # Title
+        title = Align("[title]Sudoku Solver[/title]", align="center", style="standard")
+
+        # Sudoku grid
+        grid = self.rich_sudoku_grid()
+        grid.style = "standard"
+        # Statistics panel
+        statistics = Panel(
+            f"Speed: [data]{1000*(self.solve_time):5.1f} [standard]ms\n"
+            f"Difficulty: [data]{self.difficulty}[/data]",
+            title="Statistics",
+            style="standard",
+        )
+
+        layout.split_column(
+            Layout(title, name="title", size=1),
+            Layout(grid, name="grid", size=13),
+            Layout(statistics, name="stats", size=4),
+        )
+
+        with Live(
+            layout,
+            console=console,
+            screen=False,
+            refresh_per_second=4,
+        ) as live:  # update 4 times a second to feel fluid
+            # live.console.print(layout)
+            time.sleep(1)
+            title = Align(
+                "[title]Sudoku Solved[/title]", align="center", style="standard"
+            )
+            layout["title"].update(title)
+            time.sleep(2)
+
+    def rich_sudoku_grid(self):
+        grid = Table(
+            box=box.MINIMAL,
+            show_header=False,
+            expand=False,
+            style="standard",
+            collapse_padding=True,
+        )
+        for _ in range(3):
+            grid.add_column()
+        sqr = []
+        cols = []
+        for idx, (input_num, solved_num) in enumerate(
+            zip(self.input_board, self.solved_board)
+        ):
+            if (
+                idx % 3 == 0 and idx
+            ):  # A space between every 3 numbers (but not before row 0)
+                sqr.append(Columns(cols, padding=(0, 1)))
+                cols.clear()
+            if idx % 9 == 0 and idx:  # Add completed row to grid
+                self.add_rows_to_grid(grid, sqr)
+                sqr.clear()
+            if idx % 27 == 0 and idx:  # Add a line (new section) after every 3 rows
+                grid.add_section()
+            cols.append(self.grid_numbers(input_num, solved_num))
+        # Just need to complete the last row
+        sqr.append(Columns(cols, padding=(0, 1)))
+        self.add_rows_to_grid(grid, sqr)
+        return grid
+
+    def add_rows_to_grid(self, grid: Table, sqr):
+        grid.add_row(
+            Align(sqr[0], align="center"),
+            Align(sqr[1], align="center"),
+            Align(sqr[2], align="center"),
+            style="standard",
+        )
+
+    def grid_numbers(self, input_num, solved_num):
+        # Numbers that are in the input board display in a differnt style
+        if int(input_num):
+            style = "input_number"
+
+        else:
+            style = "standard"
+        return f"[{style}]{solved_num}[/{style}]"
 
 
 def get_test_sudokus(puzzle_num: int) -> str:
@@ -32,80 +187,6 @@ def valid_string(board_string: str) -> list:
         logging.error(f"Input board contains {len(board_list)} characters, 81 required")
         raise ValueError
     return board_list
-
-
-def display_board_plain(board: str, solve_time: float, difficulty: int) -> None:
-    """Display plain text Sudoku board in terminal"""
-    output = ""
-    for idx, num in enumerate(board):
-        if idx % 27 == 0:  # A blank line after every 3 rows
-            output += "\n\n"
-        elif idx % 9 == 0:  # A newline at the end of every row
-            output += "\n"
-        elif idx % 3 == 0:  # A space between every 3 numbers
-            output += " "
-        output += num
-    output += "\n"
-    print(output)
-    print(f"Solved in (ms): {1000*(solve_time):5.1f}\n" f"difficulty: {difficulty}")
-
-
-def display_board_rich(
-    input_board: str, solved_board: str, solve_time: float, difficulty: int
-) -> None:
-    """Display a formatted Sudoku board in the terminal using the rich library"""
-    my_theme = Theme(
-        {
-            "input_number": "bold red on white",
-            "standard": "bold black on white",
-            "data": "blue on white",
-            "title": "underline black on white",
-        }
-    )
-    console = Console(theme=my_theme, width=28, style="standard")
-    grid = Table(box=box.MINIMAL, show_header=False, expand=True)
-    for _ in range(3):
-        grid.add_column()
-    text = ""
-    sqr = []
-    for idx, (input_num, solved_num) in enumerate(zip(input_board, solved_board)):
-        if (
-            idx % 3 == 0 and idx
-        ):  # A space between every 3 numbers (but not before row 0)
-            text += " "
-            sqr.append(text)
-            text = ""
-        if idx % 9 == 0 and idx:  # Add completed row to grid
-            grid.add_row(sqr[0], sqr[1], sqr[2])
-            sqr.clear()
-        if idx % 27 == 0 and idx:  # Add a line (new section) after every 3 rows
-            grid.add_section()
-
-        # Numbers that are in the input board display in a differnt style
-        if int(input_num):
-            this_theme = "[input_number]"
-        else:
-            this_theme = "[standard]"
-        text += f"{this_theme} {solved_num}"
-
-    # Just need to complete the last row
-    text += " "
-    sqr.append(text)
-    grid.add_row(sqr[0], sqr[1], sqr[2])
-
-    print_title = [
-        "[title]Sudoku Solver",
-    ]
-    column = Columns(print_title, expand=True, align="center")
-    console.print(column)
-    console.print(grid)
-    console.print(
-        Panel(
-            f"Speed: [data]{1000*(solve_time):5.1f} [standard]ms\n"
-            f"Difficulty: [data]{difficulty}",
-            title="Statistics",
-        )
-    )
 
 
 def parse_commandline_args():
@@ -151,6 +232,12 @@ def parse_commandline_args():
         "-r",
         "--rich",
         help="display solution in rich text",
+        action="store_true",
+    )
+    output_parse_group.add_argument(
+        "-a",
+        "--animated",
+        help="display solution with animation",
         action="store_true",
     )
     return parser.parse_args()
@@ -204,12 +291,15 @@ def main():
         logging.info(f"Board solved in {solve_time} s")
         logging.info(f"Solution: {solved_board}")
 
+        board = SudokuBoardDisplay(sudoku_input, solved_board, solve_time, difficulty)
         if args.minimal:
-            print(solved_board)
+            board.display_minimal()
         elif args.unformatted:
-            display_board_plain(solved_board, solve_time, difficulty)
+            board.display_plain()
+        elif args.rich:
+            board.display_rich_static()
         else:
-            display_board_rich(sudoku_input, solved_board, solve_time, difficulty)
+            board.display_rich_animated()
 
     else:
         logging.warning("board: 0")
