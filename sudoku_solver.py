@@ -1,5 +1,6 @@
 class SudokuSolver:
-    __version__ = "7.1"
+    __version__ = "7.2"
+    ALL_DIGITS = {str(n) for n in range(1, 10)}
 
     def __init__(self, board: str) -> None:
         self.board = list(board)
@@ -82,9 +83,8 @@ class SudokuSolver:
 
     def get_available(self, position: int) -> set:
         """Return set of numbers that are available in a given position"""
-        all_digits = {str(n) for n in range(1, 10)}
         not_available = self.get_not_available(position)
-        return all_digits.difference(not_available)
+        return self.ALL_DIGITS.difference(not_available)
 
     def update_board(self, position: int, number: str) -> None:
         """Places a number in the board"""
@@ -99,19 +99,18 @@ class SudokuSolver:
         i.e. is there just one of each digit in each row, column and square"""
         if self.board is False:
             return False
-        valid_set = {str(n) for n in range(1, 10)}
 
         # check rows are valid
         for i in range(0, 81, 9):
-            if self.get_row(i) != valid_set:
+            if self.get_row(i) != self.ALL_DIGITS:
                 return False
         # check columns are valid
         for i in range(9):
-            if self.get_col(i) != valid_set:
+            if self.get_col(i) != self.ALL_DIGITS:
                 return False
         # check squares are valid
         for i in range(0, 81, 12):
-            if self.get_sqr(i) != valid_set:
+            if self.get_sqr(i) != self.ALL_DIGITS:
                 return False
         return True
 
