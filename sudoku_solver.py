@@ -1,3 +1,6 @@
+from itertools import chain
+
+
 class SudokuSolver:
     __version__ = "7.2"
     ALL_DIGITS = {str(n) for n in range(1, 10)}
@@ -25,14 +28,11 @@ class SudokuSolver:
 
     def reset_alg2(self):
         """Clears all the available positions used in alg2"""
-        for alg2_rcs in (
-            self.available_pos_row,
-            self.available_pos_col,
-            self.available_pos_sqr,
+        for rcs in chain(
+            self.available_pos_row, self.available_pos_col, self.available_pos_sqr
         ):
-            for rcs in alg2_rcs:
-                for position_set in rcs:
-                    position_set.clear()
+            for position_set in rcs:
+                position_set.clear()
 
     def update_alg2(self, position, available):
         alg2_rcs = self.get_rcs_alg2(position)
@@ -86,14 +86,6 @@ class SudokuSolver:
         not_available = self.get_not_available(position)
         return self.ALL_DIGITS.difference(not_available)
 
-    def update_board(self, position: int, number: str) -> None:
-        """Places a number in the board"""
-        self.board[position] = number
-
-    def get_position(self, position: int) -> str:
-        """Returns number at given position in board"""
-        return self.board[position]
-
     def check_valid(self) -> bool:
         """Checks whether sudoku board is valid by definition
         i.e. is there just one of each digit in each row, column and square"""
@@ -128,7 +120,7 @@ class SudokuSolver:
                 board_error = True
                 break
             if available_count == 1:  # must be that number in this position
-                self.update_board(position, available.pop())
+                self.board[position] = available.pop()
                 changed = True
 
             else:
@@ -143,17 +135,14 @@ class SudokuSolver:
     def alg2(self):
         """run the second algorithm - each row, col, sq must have 1 of all 9 numbers"""
         changed = False
-        for alg2_rcs in (
-            self.available_pos_row,
-            self.available_pos_col,
-            self.available_pos_sqr,
+        for rcs in chain(
+            self.available_pos_row, self.available_pos_col, self.available_pos_sqr
         ):
-            for rcs in alg2_rcs:
-                for number, available_pos in enumerate(rcs):
-                    if len(available_pos) == 1 and number != 0:
-                        position = available_pos.pop()
-                        self.update_board(position, str(number))
-                        changed = True
+            for number, available_pos in enumerate(rcs):
+                if len(available_pos) == 1 and number != 0:
+                    position = available_pos.pop()
+                    self.board[position] = str(number)
+                    changed = True
         return changed
 
     def generate_test_board(self, position, number):
