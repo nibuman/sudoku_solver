@@ -19,7 +19,7 @@ class SudokuSolver:
     def get_rcs_alg2(self, position: int) -> tuple:
         """Returns the row, column and square for a particular cell for alg2"""
         r, c = self.get_index(position)
-        s = self.get_sqr_index(position)
+        s = self.get_sqr_index(r, c)
         return (
             self.available_pos_row[r],
             self.available_pos_col[c],
@@ -40,15 +40,14 @@ class SudokuSolver:
             for num in available:
                 rcs[int(num)].add(position)
 
-    def get_sqr_index(self, position):
+    def get_sqr_index(self, row: int, col: int):
         """Identifies which 3x3 square (numbered 0-8) a given position is in:
         0 1 2
         3 4 5
         6 7 8
-        e.g. position 3 will be square 0, 4 in square 1, and 80 in square 8.
+        e.g. position 0,3 will be square 0, 0,4 in square 1, and 8,7 in square 8.
         """
-        r, c = self.get_index(position)
-        return ((r // 3) * 3) + (c // 3)
+        return ((row // 3) * 3) + (col // 3)
 
     def get_index(self, position):
         """Returns 2d coordinates of position in r,c format"""
@@ -71,6 +70,7 @@ class SudokuSolver:
         """Return set of numbers in square at given position"""
         r, c = self.get_index(position)
         sq_start_pos = (r // 3) * 27 + (c // 3) * 3
+        # offsets from starting position to visit every position in square
         offsets = (0, 1, 2, 9, 10, 11, 18, 19, 20)
         return {self.board[sq_start_pos + offset] for offset in offsets}
 
@@ -101,7 +101,7 @@ class SudokuSolver:
             if self.get_col(i) != self.ALL_DIGITS:
                 return False
         # check squares are valid
-        for i in range(0, 81, 12):
+        for i in range(10, 81, 27):
             if self.get_sqr(i) != self.ALL_DIGITS:
                 return False
         return True
@@ -139,7 +139,7 @@ class SudokuSolver:
             self.available_pos_row, self.available_pos_col, self.available_pos_sqr
         ):
             for number, available_pos in enumerate(rcs):
-                if len(available_pos) == 1 and number != 0:
+                if len(available_pos) == 1:
                     position = available_pos.pop()
                     self.board[position] = str(number)
                     changed = True
@@ -168,14 +168,8 @@ class SudokuSolver:
         self.initialise_available_pos()
         return True
 
-    def solve_sudoku(self) -> list:
-        """Try to solve any Sudoku board, needs to be called for each guess
-        - Iterates through every cell
-        - Removes any values already used in each row, column or square
-        - If only one value possible for a cell - then assign that
-        - If no previous iterations don't find any valid values then:
-        - Try different values
-        """
+    def solve_sudoku(self) -> list | bool:
+        """Try to solve any Sudoku board using 3 algorithms, alg1, alg2, and alg3"""
         board_error = False
 
         while "0" in self.board:

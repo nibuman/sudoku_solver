@@ -101,7 +101,7 @@ class SudokuBoardDisplay:
 
         # Statistics panel
         statistics = Panel(
-            "Speed:     ms\n" f"Difficulty: ",
+            "Speed:     ms\nDifficulty: ",
             title="Statistics",
             style="standard",
         )
