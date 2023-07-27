@@ -153,6 +153,17 @@ class SudokuSolverTest(unittest.TestCase):
             result = SudokuSolver(list(valid_board["answer"])).check_valid()
             self.assertEqual(True, result)
 
+    def test_multiple_solutions(self):
+        multiple_boards = self.config_data["multiple_solutions"]
+        puzzle = multiple_boards[0]["question"]
+        answers = multiple_boards[0]["answers"]
+
+        board = SudokuSolver(puzzle)
+        test_result = board.solve_sudoku()
+        # self.assertEqual(len(answers), len(test_result))
+        # self.assertEqual(test_result, answers[1])
+        self.assertIn(test_result, answers)
+
     def run_sudoku_solver(self, puzzle_num: int):
         """Runs the 'solve_sudoku' method - in separate method
         to keep it consistent for each test. Outputs details of
@@ -162,7 +173,7 @@ class SudokuSolverTest(unittest.TestCase):
         answer = self.config_data["sudoku_puzzle"][puzzle_num]["answer"]
 
         t1 = time.time()
-        board = SudokuSolver(list(puzzle))
+        board = SudokuSolver(puzzle)
         test_result = board.solve_sudoku()
         t2 = time.time()
 
