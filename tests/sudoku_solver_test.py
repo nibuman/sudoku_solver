@@ -159,11 +159,15 @@ class SudokuSolverTest(unittest.TestCase):
         puzzle = multiple_boards[0]["question"]
         answers = multiple_boards[0]["answers"]
 
-        board = SudokuSolver(puzzle)
-        test_result = board.solve_sudoku()
+        solver = SudokuSolver(puzzle, 16)
+        results = solver.solve_sudoku()
+        expected_number_of_solutions = multiple_boards[0]["solution_count"]
+        self.assertEqual(len(results), expected_number_of_solutions)
         # self.assertEqual(len(answers), len(test_result))
         # self.assertEqual(test_result, answers[1])
-        self.assertIn(test_result, answers)
+        test_result = ["".join(result) for result in results]
+        for result in test_result:
+            self.assertIn(result, answers)
 
     def run_sudoku_solver(self, puzzle_num: int):
         """Runs the 'solve_sudoku' method - in separate method
@@ -174,18 +178,19 @@ class SudokuSolverTest(unittest.TestCase):
         answer = self.config_data["sudoku_puzzle"][puzzle_num]["answer"]
 
         t1 = time.time()
-        board = SudokuSolver(puzzle)
-        test_result = board.solve_sudoku()
+        solver = SudokuSolver(puzzle, 164)
+        results = solver.solve_sudoku()
         t2 = time.time()
 
-        self.assertEqual(test_result, answer)
+        test_result = ["".join(result) for result in results]
+        self.assertIn(answer, test_result)
 
         # Write out results to file
         csv_row = [
             datetime.datetime.now(),  # Current date and time
             '"' + puzzle + '"',  # The full puzzle board
             f"{t2-t1:8.5f}",  # Time to solve
-            board.difficulty_score,  # Difficulty score
+            solver.difficulty_score,  # Difficulty score
             True,
             "v" + SudokuSolver.__version__,
         ]  # Version

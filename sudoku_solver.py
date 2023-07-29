@@ -128,6 +128,39 @@ class SudokuSolver:
                 return False
         return True
 
+    def get_options_for_free_positions(self):
+        return [
+            BoardPosition(
+                possible_values=self.get_available(position), position=position
+            )
+            for position, num_str in enumerate(self.board)
+            if num_str == "0"
+        ]
+
+    def fill_free_positions(self, free_positions: list[BoardPosition]):
+        changed = False
+        options = []
+        for this_position in free_positions:
+            match this_position.options_count:
+                case 0:
+                    raise OutOfOptionsError(
+                        f"No options in position {this_position.position}"
+                    )
+                case 1:  # must be that number in this position
+                    self.board[
+                        this_position.position
+                    ] = this_position.possible_values.pop()
+                    changed = True
+                case _:
+                    options.append(this_position)
+                    self.update_alg2(
+                        this_position.position, this_position.possible_values
+                    )
+        position_with_fewest_options = min(
+            options, key=lambda x: x.options_count, default=None
+        )
+        return changed or position_with_fewest_options
+
     def alg1(self):
         changed = False
         options = []
@@ -150,10 +183,7 @@ class SudokuSolver:
         position_with_fewest_options = min(
             options, key=lambda x: x.options_count, default=None
         )
-        if changed:
-            return True
-        else:
-            return position_with_fewest_options
+        return changed or position_with_fewest_options
 
     def alg2(self):
         """run the second algorithm - each row, col, sq must have 1 of all 9 numbers"""
@@ -191,18 +221,24 @@ class SudokuSolver:
         self.initialise_available_pos()
         return True
 
-    def solve_sudoku(self) -> str:
+    def solve_sudoku(self) -> list[SudokuBoard]:
         """Try to solve any Sudoku board using 3 algorithms, alg1, alg2, and alg3"""
         board_error = False
 
         while len(self.valid_solutions) < self.max_solutions:
             if "0" not in self.board:
                 self.valid_solutions.append(self.board)
+                try:
+                    self.board = self.guess_stack.pop()
+                except IndexError:
+                    break
+
             self.reset_alg2()
             # Alg1
             board_error = False
+            empty_positions = self.get_options_for_free_positions()
             try:
-                result = self.alg1()
+                result = self.fill_free_positions(empty_positions)
             except OutOfOptionsError:
                 result = {"changed": False, "lowest": None}
                 board_error = True
@@ -220,7 +256,4 @@ class SudokuSolver:
             if not result:
                 break
 
-        # if not self.check_valid():
-        #     return "Error: Could not solve"
-        # return "".join(self.board)
-        return "".join(self.valid_solutions[0])
+        return self.valid_solutions
