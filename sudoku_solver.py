@@ -150,10 +150,10 @@ class SudokuSolver:
         position_with_fewest_options = min(
             options, key=lambda x: x.options_count, default=None
         )
-        return {
-            "changed": changed,
-            "lowest": position_with_fewest_options,
-        }
+        if changed:
+            return True
+        else:
+            return position_with_fewest_options
 
     def alg2(self):
         """run the second algorithm - each row, col, sq must have 1 of all 9 numbers"""
@@ -206,9 +206,9 @@ class SudokuSolver:
             except OutOfOptionsError:
                 result = {"changed": False, "lowest": None}
                 board_error = True
-            if result["changed"] is True:
+            if result is True:
                 continue
-            lowest = result["lowest"]
+            lowest = result
 
             # Alg 2
             if not board_error:
