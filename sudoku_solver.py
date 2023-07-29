@@ -221,6 +221,14 @@ class SudokuSolver:
         self.initialise_available_pos()
         return True
 
+    def try_next_board_option(self):
+        try:
+            self.board = self.guess_stack.pop()
+        except IndexError:
+            return False
+        else:
+            return True
+
     def solve_sudoku(self) -> list[SudokuBoard]:
         """Try to solve any Sudoku board using 3 algorithms, alg1, alg2, and alg3"""
         board_error = False
@@ -228,9 +236,7 @@ class SudokuSolver:
         while len(self.valid_solutions) < self.max_solutions:
             if "0" not in self.board:
                 self.valid_solutions.append(self.board)
-                try:
-                    self.board = self.guess_stack.pop()
-                except IndexError:
+                if not self.try_next_board_option():
                     break
 
             self.reset_alg2()
@@ -240,8 +246,9 @@ class SudokuSolver:
             try:
                 result = self.fill_free_positions(empty_positions)
             except OutOfOptionsError:
-                result = {"changed": False, "lowest": None}
-                board_error = True
+                if not self.try_next_board_option():
+                    break
+                continue
             if result is True:
                 continue
             lowest = result
