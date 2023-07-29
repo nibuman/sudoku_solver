@@ -1,9 +1,10 @@
-import unittest
-from sudoku_solver import SudokuSolver
 import csv
-import time
-import json
 import datetime
+import json
+import time
+import unittest
+
+from sudoku_solver import SudokuSolver
 
 
 class SudokuSolverTest(unittest.TestCase):

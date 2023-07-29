@@ -1,9 +1,13 @@
-from itertools import chain
 from dataclasses import dataclass
+from itertools import chain
 
 SudokuBoard = list[str]
 DigitsInPosition = set[str]
 DigitsInPositions = list[DigitsInPosition]
+
+
+class OutOfOptionsError(Exception):
+    """No valid options for any digits in one or more positions of board"""
 
 
 @dataclass
@@ -12,11 +16,8 @@ class BoardPosition:
     position: int = 0
 
     @property
-    def value_count(self):
-        if not self.possible_values:
-            return 9
-        else:
-            return len(self.possible_values)
+    def options_count(self):
+        return len(self.possible_values)
 
 
 class SudokuSolver:
@@ -129,32 +130,29 @@ class SudokuSolver:
 
     def alg1(self):
         changed = False
-        board_error = False
-        board_position_with_fewest_options = BoardPosition(possible_values=set())
+        options = []
         for position, num_str in enumerate(self.board):
             if num_str != "0":
                 continue
-            available_values_in_current_position = self.get_available(position)
-            available_count = len(available_values_in_current_position)
-            if available_count == 0:  # must be an invalid board
-                board_error = True
-                break
-            elif available_count == 1:  # must be that number in this position
-                self.board[position] = available_values_in_current_position.pop()
+            current_postion = BoardPosition(
+                possible_values=self.get_available(position), position=position
+            )
+            if current_postion.options_count == 0:  # must be an invalid board
+                raise OutOfOptionsError(f"No options in position {position}")
+            elif (
+                current_postion.options_count == 1
+            ):  # must be that number in this position
+                self.board[position] = current_postion.possible_values.pop()
                 changed = True
             else:
-                if available_count < board_position_with_fewest_options.value_count:
-                    board_position_with_fewest_options.position = position
-                    board_position_with_fewest_options.possible_values = (
-                        available_values_in_current_position.copy()
-                    )
-
-                self.update_alg2(position, available_values_in_current_position)
-
+                options.append(current_postion)
+                self.update_alg2(position, current_postion.possible_values)
+        position_with_fewest_options = min(
+            options, key=lambda x: x.options_count, default=None
+        )
         return {
             "changed": changed,
-            "error": board_error,
-            "lowest": board_position_with_fewest_options,
+            "lowest": position_with_fewest_options,
         }
 
     def alg2(self):
@@ -180,7 +178,7 @@ class SudokuSolver:
         position with fewest alternatives to reduce the amount of recursion
         Last resort only runs if cannot fill numbers using other methods.
         """
-        if not invalid_board:
+        if not invalid_board and "0" in self.board:
             for test_num in lowest.possible_values:
                 test_board = self.generate_test_board(lowest.position, test_num)
                 self.guess_stack.append(test_board)
@@ -202,8 +200,12 @@ class SudokuSolver:
                 self.valid_solutions.append(self.board)
             self.reset_alg2()
             # Alg1
-            result = self.alg1()
-            board_error = result["error"]
+            board_error = False
+            try:
+                result = self.alg1()
+            except OutOfOptionsError:
+                result = {"changed": False, "lowest": None}
+                board_error = True
             if result["changed"] is True:
                 continue
             lowest = result["lowest"]
