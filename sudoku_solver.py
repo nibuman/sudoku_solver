@@ -177,12 +177,12 @@ class SudokuSolver:
         test_board[position] = number
         return test_board
 
-    def alg3(self, lowest: BoardPosition, invalid_board=False):
+    def alg3(self, lowest: BoardPosition):
         """Try each possible alternative value in turn using the board
         position with fewest alternatives to reduce the amount of recursion
         Last resort only runs if cannot fill numbers using other methods.
         """
-        if not invalid_board and "0" in self.board:
+        if "0" in self.board:
             for test_num in lowest.possible_values:
                 test_board = self.generate_test_board(lowest.position, test_num)
                 self.guess_stack.append(test_board)
@@ -212,7 +212,6 @@ class SudokuSolver:
 
     def solve_sudoku(self) -> list[SudokuBoard]:
         """Try to solve any Sudoku board using 3 algorithms, alg1, alg2, and alg3"""
-        board_error = False
 
         while len(self.valid_solutions) < self.max_solutions:
             if "0" not in self.board:
@@ -222,7 +221,6 @@ class SudokuSolver:
 
             self.reset_alg2()
             # Alg1
-            board_error = False
             empty_positions = self.get_options_for_free_positions()
             try:
                 options_for_all_positions = self.fill_free_positions(empty_positions)
@@ -235,12 +233,11 @@ class SudokuSolver:
             lowest = self.position_with_fewest_options(options_for_all_positions)
 
             # Alg 2
-            if not board_error:
-                if self.alg2():
-                    continue
+            if self.alg2():
+                continue
 
             # Alg 3
-            result = self.alg3(lowest, invalid_board=board_error)
+            result = self.alg3(lowest)
             if not result:
                 break
 
