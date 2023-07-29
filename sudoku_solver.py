@@ -156,34 +156,8 @@ class SudokuSolver:
                     self.update_alg2(
                         this_position.position, this_position.possible_values
                     )
-        position_with_fewest_options = min(
-            options, key=lambda x: x.options_count, default=None
-        )
-        return changed or position_with_fewest_options
 
-    def alg1(self):
-        changed = False
-        options = []
-        for position, num_str in enumerate(self.board):
-            if num_str != "0":
-                continue
-            current_postion = BoardPosition(
-                possible_values=self.get_available(position), position=position
-            )
-            if current_postion.options_count == 0:  # must be an invalid board
-                raise OutOfOptionsError(f"No options in position {position}")
-            elif (
-                current_postion.options_count == 1
-            ):  # must be that number in this position
-                self.board[position] = current_postion.possible_values.pop()
-                changed = True
-            else:
-                options.append(current_postion)
-                self.update_alg2(position, current_postion.possible_values)
-        position_with_fewest_options = min(
-            options, key=lambda x: x.options_count, default=None
-        )
-        return changed or position_with_fewest_options
+        return changed or options
 
     def alg2(self):
         """run the second algorithm - each row, col, sq must have 1 of all 9 numbers"""
@@ -229,6 +203,13 @@ class SudokuSolver:
         else:
             return True
 
+    def position_with_fewest_options(
+        self, options_for_all_positions: list[BoardPosition]
+    ):
+        return min(
+            options_for_all_positions, key=lambda x: x.options_count, default=None
+        )
+
     def solve_sudoku(self) -> list[SudokuBoard]:
         """Try to solve any Sudoku board using 3 algorithms, alg1, alg2, and alg3"""
         board_error = False
@@ -244,14 +225,14 @@ class SudokuSolver:
             board_error = False
             empty_positions = self.get_options_for_free_positions()
             try:
-                result = self.fill_free_positions(empty_positions)
+                options_for_all_positions = self.fill_free_positions(empty_positions)
             except OutOfOptionsError:
                 if not self.try_next_board_option():
                     break
                 continue
-            if result is True:
+            if options_for_all_positions is True:
                 continue
-            lowest = result
+            lowest = self.position_with_fewest_options(options_for_all_positions)
 
             # Alg 2
             if not board_error:
