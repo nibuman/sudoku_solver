@@ -66,12 +66,12 @@ class SudokuSolverTest(unittest.TestCase):
         """
         invalid_boards = self.config_data["invalid_boards"]
         for invalid_board in invalid_boards:
-            result = SudokuSolver(list(invalid_board)).check_valid()
+            result = SudokuSolver(list(invalid_board)).validate_complete_board()
             self.assertEqual(False, result)
 
         valid_boards = self.config_data["sudoku_puzzle"]
         for valid_board in valid_boards:
-            result = SudokuSolver(list(valid_board["answer"])).check_valid()
+            result = SudokuSolver(list(valid_board["answer"])).validate_complete_board()
             self.assertEqual(valid_board["answer"], result)
 
     def run_sudoku_solver(self, puzzle_num: int):
