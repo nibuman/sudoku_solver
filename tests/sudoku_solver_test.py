@@ -27,6 +27,10 @@ class SudokuValidatorTest(unittest.TestCase):
         short_board = "0" * 80
         self.assertFalse(SudokuValidator.correct_number_of_digits(short_board))
 
+    def test_get_all_squares(self) -> None:
+        board = "1" * 81
+        self.assertEqual(len(SudokuValidator.get_all_squares(board)), 9)
+
     def test_only_valid_digits(self) -> None:
         board = "".join([str(row_num) for row_num in range(9) for _ in range(9)])
         digits = SudokuSolver.DIGITS_0_TO_9
@@ -51,6 +55,9 @@ class SudokuValidatorTest(unittest.TestCase):
 
         valid_board = self.STANDARD_VALID_INPUT
         self.assertTrue(validator.validate_input_board(valid_board))
+
+        invalid_board = "123456789234567891345678912456789123567891234678912345789123456891234567912345678"
+        self.assertFalse(validator.validate_input_board(invalid_board))
 
     def test_validate_complete_board(self):
         """Send deliberately invalid suduko boards and check that

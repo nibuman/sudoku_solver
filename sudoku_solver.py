@@ -68,12 +68,11 @@ class SudokuValidator:
 
     @staticmethod
     def get_all_squares(board):
+        offsets = (0, 1, 2, 9, 10, 11, 18, 19, 20)
         squares = []
         for a in range(0, 81, 27):
-            square = ""
             for b in range(0, 9, 3):
-                square = f"{square}{board[a+b:a+b+3]}"
-            squares.append(square)
+                squares.append("".join([board[a + b + o] for o in offsets]))
         return squares
 
     @staticmethod
@@ -223,16 +222,16 @@ class SudokuSolver:
                     raise OutOfOptionsError(
                         f"No options in position {this_position.position}"
                     )
-                case BoardPosition(options_count=1):  # must be that number
-                    self.board[
-                        this_position.position
-                    ] = this_position.possible_values.pop()
+                case BoardPosition(
+                    options_count=1, position=pos, possible_values=vals
+                ):  # must be that number
+                    self.board[pos] = vals.pop()
                     changed = True
-                case _:
+                case BoardPosition(position=pos, possible_values=vals):
                     options.append(this_position)
-                    self.update_alg2(
-                        this_position.position, this_position.possible_values
-                    )
+                    self.update_alg2(pos, vals)
+                case _:
+                    raise TypeError
 
         return changed or options
 
