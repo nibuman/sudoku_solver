@@ -4,7 +4,70 @@ import json
 import time
 import unittest
 
-from sudoku_solver import SudokuSolver, BoardError
+from sudoku_solver import SudokuSolver, BoardError, SudokuValidator
+
+
+class SudokuValidatorTest(unittest.TestCase):
+    def setUp(self) -> None:
+        with open("./sudoku_data.json", "r") as f:
+            self.config_data = json.load(f)
+        self.STANDARD_VALID_INPUT = self.config_data["sudoku_puzzle"][0]["question"]
+        self.STANDARD_VALID_SOLVED = self.config_data["sudoku_puzzle"][0]["answer"]
+        self.DIGITS_0_TO_9 = {str(n) for n in range(10)}
+        self.DIGITS_1_TO_9 = {str(n) for n in range(1, 10)}
+        return super().setUp()
+
+    def test_correct_number_of_digits(self) -> None:
+        board = "0" * 81
+        self.assertTrue(SudokuValidator.correct_number_of_digits(board))
+
+        empty_board = ""
+        self.assertFalse(SudokuValidator.correct_number_of_digits(empty_board))
+
+        short_board = "0" * 80
+        self.assertFalse(SudokuValidator.correct_number_of_digits(short_board))
+
+    def test_only_valid_digits(self) -> None:
+        board = "".join([str(row_num) for row_num in range(9) for _ in range(9)])
+        digits = SudokuSolver.DIGITS_0_TO_9
+        self.assertTrue(SudokuValidator.only_valid_digits(board, digits))
+
+        invalid_board = f"{board[0:80]}a"
+        self.assertFalse(SudokuValidator.only_valid_digits(invalid_board, digits))
+
+    def test_validate_input_board(self) -> None:
+        empty_board = ""
+        validator = SudokuValidator()
+        self.assertFalse(validator.validate_input_board(empty_board))
+
+        long_board = "0" * 82
+        self.assertFalse(validator.validate_input_board(long_board))
+
+        ones_board = "1" * 81
+        self.assertFalse(validator.validate_input_board(ones_board))
+
+        zeroes_board = "0" * 81
+        self.assertTrue(validator.validate_input_board(zeroes_board))
+
+        valid_board = self.STANDARD_VALID_INPUT
+        self.assertTrue(validator.validate_input_board(valid_board))
+
+    def test_validate_complete_board(self):
+        """Send deliberately invalid suduko boards and check that
+        method fails
+        board 01 start of line 3 should be *37*26...
+        board 02 middle of line 2 should be 793*58*12
+        """
+        # invalid_boards = self.config_data["invalid_boards"]
+        # for invalid_board in invalid_boards:
+        #     result = SudokuSolver(list(invalid_board)).validate_complete_board()
+        #     self.assertEqual(False, result)
+        validator = SudokuValidator()
+        ones_board = "1" * 81
+        self.assertFalse(validator.validate_solved_board(ones_board))
+
+        valid_board = self.STANDARD_VALID_SOLVED
+        self.assertTrue(validator.validate_solved_board(valid_board))
 
 
 class SudokuSolverTest(unittest.TestCase):
@@ -15,55 +78,52 @@ class SudokuSolverTest(unittest.TestCase):
         self.STANDARD_VALID_SOLVED = self.config_data["sudoku_puzzle"][0]["answer"]
         self.DIGITS_0_TO_9 = {str(n) for n in range(10)}
         self.DIGITS_1_TO_9 = {str(n) for n in range(1, 10)}
+        validator = SudokuValidator()
+        self.input_validator = validator.validate_input_board
+        self.solved_validator = validator.validate_solved_board
         return super().setUp()
 
-    def test_only_valid_digits(self) -> None:
-        board = "".join([str(row_num) for row_num in range(9) for _ in range(9)])
-        digits = SudokuSolver.DIGITS_0_TO_9
-        self.assertTrue(SudokuSolver.only_valid_digits(board, digits))
-
-        invalid_board = f"{board[0:80]}a"
-        self.assertFalse(SudokuSolver.only_valid_digits(invalid_board, digits))
-
-    def test_correct_number_of_digits(self) -> None:
-        board = "0" * 81
-        self.assertTrue(SudokuSolver.correct_number_of_digits(board))
-
-        empty_board = ""
-        self.assertFalse(SudokuSolver.correct_number_of_digits(empty_board))
-
-        short_board = "0" * 80
-        self.assertFalse(SudokuSolver.correct_number_of_digits(short_board))
-
-    def test_validate_input_board(self) -> None:
-        empty_board = ""
-        self.assertRaises(BoardError, lambda: SudokuSolver(empty_board))
-
+    def test_input_validation(self) -> None:
         valid_board = self.STANDARD_VALID_INPUT
-        SudokuSolver(valid_board)
+
+        # Validator always returns False
+        always_false = lambda x: False
+        self.assertRaises(
+            BoardError, lambda: SudokuSolver(valid_board, validator=always_false)
+        )
+
+        validator = SudokuValidator().validate_input_board
+        solver = SudokuSolver(valid_board, validator=validator)
+
+        invalid_input = "1" * 81
+        self.assertRaises(
+            BoardError, lambda: SudokuSolver(invalid_input, validator=validator)
+        )
+
+        invalid_input = self.STANDARD_VALID_INPUT[:80]
+        self.assertRaises(
+            BoardError, lambda: SudokuSolver(invalid_input, validator=validator)
+        )
 
     def test_get_index(self) -> None:
-        board = self.STANDARD_VALID_INPUT
-        solver = SudokuSolver(board)
-
         position = 0
         expected_answer = (0, 0)
-        answer = solver.get_index(position)
+        answer = SudokuSolver.get_index(position)
         self.assertEqual(answer, expected_answer)
 
         position = 1
         expected_answer = (0, 1)
-        answer = solver.get_index(position)
+        answer = SudokuSolver.get_index(position)
         self.assertEqual(answer, expected_answer)
 
         position = 9
         expected_answer = (1, 0)
-        answer = solver.get_index(position)
+        answer = SudokuSolver.get_index(position)
         self.assertEqual(answer, expected_answer)
 
         position = 20
         expected_answer = (2, 2)
-        answer = solver.get_index(position)
+        answer = SudokuSolver.get_index(position)
         self.assertEqual(answer, expected_answer)
 
     def test_get_row(self) -> None:
@@ -173,22 +233,6 @@ class SudokuSolverTest(unittest.TestCase):
     def test_sudoku_6(self) -> None:
         self.run_sudoku_solver(puzzle_num=6)
 
-    def test_validate_complete_board(self):
-        """Send deliberately invalid suduko boards and check that
-        method fails
-        board 01 start of line 3 should be *37*26...
-        board 02 middle of line 2 should be 793*58*12
-        """
-        # invalid_boards = self.config_data["invalid_boards"]
-        # for invalid_board in invalid_boards:
-        #     result = SudokuSolver(list(invalid_board)).validate_complete_board()
-        #     self.assertEqual(False, result)
-
-        valid_boards = self.config_data["sudoku_puzzle"]
-        for valid_board in valid_boards:
-            result = SudokuSolver(list(valid_board["answer"])).validate_complete_board()
-            self.assertEqual(True, result)
-
     def test_multiple_solutions(self):
         multiple_boards = self.config_data["multiple_solutions"]
         puzzle = multiple_boards[0]["question"]
@@ -213,8 +257,8 @@ class SudokuSolverTest(unittest.TestCase):
         answer = self.config_data["sudoku_puzzle"][puzzle_num]["answer"]
 
         t1 = time.time()
-        solver = SudokuSolver(puzzle)
-        results = solver.solve_sudoku(2)
+        solver = SudokuSolver(puzzle, validator=self.input_validator)
+        results = solver.solve_sudoku(2, validator=self.solved_validator)
         t2 = time.time()
 
         self.assertEqual(len(results), 1)
