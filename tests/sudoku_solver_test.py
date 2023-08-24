@@ -4,7 +4,7 @@ import json
 import time
 import unittest
 
-from sudoku_solver import SudokuSolver, BoardError, SudokuValidator
+from sudoku_solver.solver.sudoku_solver import SudokuSolver, BoardError, SudokuValidator
 
 
 class SudokuValidatorTest(unittest.TestCase):

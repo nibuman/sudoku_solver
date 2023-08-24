@@ -2,13 +2,11 @@ from dataclasses import dataclass
 from itertools import chain
 from typing import Callable
 
+from sudoku_solver.solver import solvers
+
 SudokuBoard = list[str]
 DigitsInPosition = set[str]
 DigitsInPositions = list[DigitsInPosition]
-
-
-class OutOfOptionsError(Exception):
-    """No valid options for any digits in one or more positions of board"""
 
 
 class BoardError(Exception):
@@ -25,99 +23,15 @@ class BoardPosition:
         return len(self.possible_values)
 
 
-class SudokuValidator:
-    DIGITS_1_TO_9 = {str(n) for n in range(1, 10)}
-    DIGITS_0_TO_9 = {str(n) for n in range(10)}
-
-    def validate_input_board(self, board: str) -> bool:
-        if not all(
-            [
-                self.correct_number_of_digits(board),
-                self.only_valid_digits(board, self.DIGITS_0_TO_9),
-            ]
-        ):
-            return False
-
-        return all(
-            [
-                self.digits_present_only_once(board, self.get_all_rows),  # Rows
-                self.digits_present_only_once(board, self.get_all_columns),  # Columns
-                self.digits_present_only_once(board, self.get_all_squares),  # Squares
-            ]
-        )
-
-    def validate_solved_board(self, board: str) -> bool:
-        """Checks whether sudoku board is valid by definition
-        i.e. is there exactly one of each digit in each row, column and square"""
-        return all(
-            [
-                self.correct_number_of_digits(board),
-                self.all_digits_present(board, self.get_all_rows),  # Rows
-                self.all_digits_present(board, self.get_all_columns),  # Columns
-                self.all_digits_present(board, self.get_all_squares),  # Squares
-            ]
-        )
-
-    @staticmethod
-    def get_all_rows(board):
-        return [board[i : i + 9] for i in range(0, 81, 9)]
-
-    @staticmethod
-    def get_all_columns(board):
-        return [board[i::9] for i in range(9)]
-
-    @staticmethod
-    def get_all_squares(board):
-        offsets = (0, 1, 2, 9, 10, 11, 18, 19, 20)
-        squares = []
-        for a in range(0, 81, 27):
-            for b in range(0, 9, 3):
-                squares.append("".join([board[a + b + o] for o in offsets]))
-        return squares
-
-    @staticmethod
-    def only_valid_digits(board: str, valid_digits: set[str]) -> bool:
-        return all(d in valid_digits for d in board)
-
-    @staticmethod
-    def correct_number_of_digits(board: str) -> bool:
-        return len(board) == 81
-
-    def all_digits_present(
-        self, board: str, get_rcs: Callable[[str], list[str]]
-    ) -> bool:
-        """Check that all the digits and only the valid digit are present in
-        each area (row, column or square). Accepts a function that returns the set
-        of numbers in a given row/column/square and a sequence of the indices
-        of each row/column/square to check"""
-        return all(set(list(rcs)) == self.DIGITS_1_TO_9 for rcs in get_rcs(board))
-
-    def digits_present_only_once(self, board: str, get_rcs: Callable) -> bool:
-        """Check that digits are present at most once in each area (row,
-        column, or square)"""
-        digits_present_only_once = []
-        for rcs in get_rcs(board):
-            digits_without_zero = [d for d in rcs if d != "0"]
-            digits_present_only_once.append(
-                sorted(digits_without_zero) == sorted(list(set(digits_without_zero)))
-            )
-        print(digits_present_only_once)
-        return all(digits_present_only_once)
-
-
-class SudokuSolver:
+class SudokuSolver(solvers.ABCSolver):
     __version__ = "8"
     DIGITS_1_TO_9 = {str(n) for n in range(1, 10)}
     DIGITS_0_TO_9 = {str(n) for n in range(0, 10)}
 
-    def __init__(self, board: str, validator: Callable | None = None) -> None:
-        if validator:
-            if not validator(board):
-                raise BoardError("Input board not valid")
+    def __init__(self, board: str) -> None:
         self.board = list(board)
         self.guess_stack: list[SudokuBoard] = []
         self.initialise_available_pos()
-        self.difficulty_score = 0
         self.valid_solutions: list[SudokuBoard] = []
 
     def initialise_available_pos(self):
@@ -219,9 +133,7 @@ class SudokuSolver:
         for this_position in free_positions:
             match this_position:
                 case BoardPosition(options_count=0):
-                    raise OutOfOptionsError(
-                        f"No options in position {this_position.position}"
-                    )
+                    raise BoardError(f"No options in position {this_position.position}")
                 case BoardPosition(
                     options_count=1, position=pos, possible_values=vals
                 ):  # must be that number
@@ -292,7 +204,7 @@ class SudokuSolver:
             empty_positions = self.get_options_for_free_positions()
             try:
                 options_for_all_positions = self.fill_free_positions(empty_positions)
-            except OutOfOptionsError:
+            except BoardError:
                 if not self.try_next_board_option():
                     break
                 continue
