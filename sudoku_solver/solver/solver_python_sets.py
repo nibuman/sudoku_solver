@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from itertools import chain
 from typing import Callable
 
-from sudoku_solver.solver import solvers
+from sudoku_solver.solver import api
 
 SudokuBoard = list[str]
 DigitsInPosition = set[str]
@@ -23,7 +23,7 @@ class BoardPosition:
         return len(self.possible_values)
 
 
-class SudokuSolver(solvers.ABCSolver):
+class SudokuSolver(api.ABCSolver):
     __version__ = "8"
     DIGITS_1_TO_9 = {str(n) for n in range(1, 10)}
     DIGITS_0_TO_9 = {str(n) for n in range(0, 10)}

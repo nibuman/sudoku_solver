@@ -1,40 +1,20 @@
-from sudoku_solver.ui import uis
-from typing import Callable
+from sudoku_solver.ui import api
 
 
-class SimpleCLI(uis.ABCUI):
-    def __init__(self, input_board: str | None, solver: Callable, validator) -> None:
-        self.validator = validator
-        self.input_board = input_board
-        self.solver = solver
-
-    @property
-    def input_board(self):
-        return self._board
-
-    @input_board.setter
-    def input_board(self, value):
-        if not value:
-            value = self.get_input()
-        cleaned_board = self.validator.clean_string(value)
-        if self.validator.validate_input_board(cleaned_board):
-            self._board = cleaned_board
-        else:
-            raise ValueError
-
+class UserInterface(api.ABCUI):
     def run(self):
         print("Input board:")
-        self.display_plain(self.input_board)
+        self._display_board(self.input_board)
         self.solved_boards = self.solver.solve_sudoku(
             self.input_board, 1, self.validator.validate_solved_board
         )
         print("Solved board:")
-        self.display_plain(self.solved_boards[0])
+        self._display_board(self.solved_boards[0])
 
-    def get_input(self) -> str:
+    def _get_input(self) -> str:
         return input("Enter Sudoku board:")
 
-    def display_plain(self, board) -> None:
+    def _display_board(self, board) -> None:
         """Display plain text Sudoku board in terminal"""
         output = ""
         for idx, num in enumerate(board):

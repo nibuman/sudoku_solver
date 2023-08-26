@@ -14,7 +14,7 @@ from rich.live import Live
 from rich import box
 from rich.layout import Layout
 from sudoku_solver import plugins, validator
-from sudoku_solver.ui import ui_simple_CLI as ui
+from sudoku_solver.ui import ui_rich_static_CLI as ui
 from sudoku_solver.solver import solver_python_sets as solver
 
 
@@ -40,32 +40,6 @@ class SudokuBoardDisplay:
 
     def display_minimal(self) -> None:
         print(self.solved_board)
-
-    def display_rich_static(self) -> None:
-        """Display a formatted Sudoku board in the terminal using the rich library"""
-        console = Console(theme=self.theme, height=18, width=30, style="standard")
-        layout = Layout()
-
-        # Title
-        title = Align("[title]Sudoku Solver[/title]", align="center")
-
-        # Sudoku grid
-        self.display_positions = self.all_positions
-        grid = self.rich_sudoku_grid()
-
-        # Statistics panel
-        statistics = Panel(
-            f"Speed: [data]{1000*(self.solve_time):5.1f} [standard]ms\n"
-            f"Difficulty: [data]{self.difficulty}[/data]",
-            title="Statistics",
-        )
-
-        layout.split_column(
-            Layout(title, name="title", size=1),
-            Layout(grid, name="grid", size=13),
-            Layout(statistics, name="stats", size=4),
-        )
-        console.print(layout)
 
     def display_rich_animated(self) -> None:
         """Display a formatted Sudoku board in the terminal using the rich library"""
@@ -280,7 +254,7 @@ def main():
     elif args.input_board:
         sudoku_input = args.input_board
 
-    display = ui.SimpleCLI(
+    display = ui.UserInterface(
         sudoku_input,
         solver.SudokuSolver(),
         validator,
