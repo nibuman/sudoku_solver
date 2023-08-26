@@ -7,7 +7,7 @@ PLUGIN_TYPES = ("solver", "ui")
 
 
 def get_plugins() -> Dict[str, list[str]]:
-    plugins = {}
+    plugins: Dict[str, list[str]] = {}
     for plugin_type in PLUGIN_TYPES:
         plugin_suffix = f"{plugin_type}_"
         plugin_path = f"./sudoku_solver/{plugin_type}/"

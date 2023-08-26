@@ -281,7 +281,9 @@ def main():
         sudoku_input = args.input_board
 
     display = ui.SimpleCLI(
-        sudoku_input, solver.SudokuSolver, validator.SudokuValidator()
+        sudoku_input,
+        solver.SudokuSolver(),
+        validator,
     )
     display.run()
 

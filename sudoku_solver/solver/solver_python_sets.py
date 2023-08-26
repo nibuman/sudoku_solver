@@ -28,11 +28,10 @@ class SudokuSolver(solvers.ABCSolver):
     DIGITS_1_TO_9 = {str(n) for n in range(1, 10)}
     DIGITS_0_TO_9 = {str(n) for n in range(0, 10)}
 
-    def __init__(self, board: str) -> None:
-        self.board = list(board)
+    def __init__(self) -> None:
         self.guess_stack: list[SudokuBoard] = []
         self.initialise_available_pos()
-        self.valid_solutions: list[SudokuBoard] = []
+        self.valid_solutions: list[str] = []
 
     def initialise_available_pos(self):
         self.available_pos_row = [[set() for _ in range(10)] for _ in range(9)]
@@ -188,14 +187,15 @@ class SudokuSolver(solvers.ABCSolver):
         )
 
     def solve_sudoku(
-        self, max_solutions: int = 1, validator: Callable | None = None
-    ) -> list[SudokuBoard]:
+        self, board: str, max_solutions: int = 1, completed_board_validator=None
+    ) -> list[str]:
         """Try to solve any Sudoku board using 3 algorithms, alg1, alg2, and alg3"""
-        if not validator:
-            validator = lambda board: True
+        self.board = list(board)
+        if not completed_board_validator:
+            completed_board_validator = lambda board: True
         while len(self.valid_solutions) < max_solutions:
-            if "0" not in self.board and validator("".join(self.board)):
-                self.valid_solutions.append(self.board)
+            if "0" not in self.board and completed_board_validator("".join(self.board)):
+                self.valid_solutions.append("".join(self.board))
                 if not self.try_next_board_option():
                     break
 
