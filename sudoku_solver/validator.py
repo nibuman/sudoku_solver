@@ -7,6 +7,8 @@ DIGITS_0_TO_9 = {str(n) for n in range(10)}
 
 
 def validate_input_board(board: str) -> bool:
+    # TODO: docstring
+    # TODO: combine the 2 all expressions
     if not all(
         [
             _correct_number_of_digits(board),
@@ -17,38 +19,34 @@ def validate_input_board(board: str) -> bool:
 
     return all(
         [
-            _digits_present_only_once(board, _get_all_rows),  # Rows
-            _digits_present_only_once(board, _get_all_columns),  # Columns
-            _digits_present_only_once(board, _get_all_squares),  # Squares
+            _digits_present_only_once(board, _get_all_rows),
+            _digits_present_only_once(board, _get_all_columns),
+            _digits_present_only_once(board, _get_all_squares),
         ]
     )
 
 
 def validate_solved_board(board: str) -> bool:
-    """Checks whether sudoku board is valid by definition
-    i.e. is there exactly one of each digit in each row, column and square"""
+    """Checks whether solved sudoku board is valid by definition:
+    - 81 digits
+    - exactly one of each digit in each row, column and square
+    """
     return all(
         [
             _correct_number_of_digits(board),
-            _all_digits_present(board, _get_all_rows),  # Rows
-            _all_digits_present(board, _get_all_columns),  # Columns
-            _all_digits_present(board, _get_all_squares),  # Squares
+            _all_digits_present(board, _get_all_rows),
+            _all_digits_present(board, _get_all_columns),
+            _all_digits_present(board, _get_all_squares),
         ]
     )
 
 
 def clean_string(board_string: str) -> str:
     """Reformats a text string as a valid board definition
-    - will remove any characters that are not 0-9
-    Checks that final string is the correct length (81)
+    - removes any characters that are not digits 0-9
     """
     ALLOWED_VALUES = {str(n) for n in range(10)}
     cleaned_board = "".join([n for n in board_string if n in ALLOWED_VALUES])
-    if len(cleaned_board) != 81:
-        logging.error(
-            f"Input board contains {len(cleaned_board)} characters, 81 required"
-        )
-        raise ValueError
     return cleaned_board
 
 
@@ -69,25 +67,20 @@ def _get_all_squares(board):
     return squares
 
 
-def _only_valid_digits(board: str, valid_digits: set[str]) -> bool:
+def _only_valid_digits(board, valid_digits) -> bool:
     return all(d in valid_digits for d in board)
 
 
-def _correct_number_of_digits(board: str) -> bool:
+def _correct_number_of_digits(board) -> bool:
     return len(board) == 81
 
 
 def _all_digits_present(board: str, get_rcs: Callable[[str], list[str]]) -> bool:
-    """Check that all the digits and only the valid digit are present in
-    each area (row, column or square). Accepts a function that returns the set
-    of numbers in a given row/column/square and a sequence of the indices
-    of each row/column/square to check"""
+    """get_rcs: accepts a function that returns a list of digits as strings"""
     return all(set(list(rcs)) == DIGITS_1_TO_9 for rcs in get_rcs(board))
 
 
-def _digits_present_only_once(board: str, get_rcs: Callable) -> bool:
-    """Check that digits are present at most once in each area (row,
-    column, or square)"""
+def _digits_present_only_once(board: str, get_rcs: Callable[[str], list[str]]) -> bool:
     digits_present_only_once = []
     for rcs in get_rcs(board):
         digits_without_zero = [d for d in rcs if d != "0"]

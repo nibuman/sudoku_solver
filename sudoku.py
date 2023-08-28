@@ -14,7 +14,7 @@ from rich.live import Live
 from rich import box
 from rich.layout import Layout
 from sudoku_solver import plugins, validator
-from sudoku_solver.ui import ui_rich_static_CLI as ui
+from sudoku_solver.ui import ui_rich_animated_CLI as ui
 from sudoku_solver.solver import solver_python_sets as solver
 
 
@@ -254,12 +254,7 @@ def main():
     elif args.input_board:
         sudoku_input = args.input_board
 
-    display = ui.UserInterface(
-        sudoku_input,
-        solver.SudokuSolver(),
-        validator,
-    )
-    display.run()
+    ui.run(sudoku_input, solver.SudokuSolver(), validator, 1)
 
 
 if __name__ == "__main__":
