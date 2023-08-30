@@ -22,7 +22,7 @@ def run(input_board: str | None, solver, validator, max_solutions: int = 1):
         input_board = _get_input()
     cleaned_input_board = _clean_and_validate(input_board, validator)
     solved_boards = solver.solve_sudoku(
-        cleaned_input_board, max_solutions, validator.validate_solved_board
+        cleaned_input_board, validator.validate_solved_board, max_solutions
     )
     _display_board(cleaned_input_board, solved_boards[0])
 
@@ -47,7 +47,9 @@ def _display_board(input_board, solved_board) -> None:
 
     # Sudoku grid
 
-    grid = rich_functions.rich_sudoku_grid(input_board, solved_board)
+    grid = rich_functions.rich_sudoku_grid(
+        input_board, solved_board, rich_functions.ALL_POSITIONS
+    )
 
     # Statistics panel
     statistics = Panel(

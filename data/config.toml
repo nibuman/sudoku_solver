@@ -1,0 +1,5 @@
+title = "Sudoku Solver Settings"
+
+[defaults]
+ui = "simple_CLI"
+solver = "python_sets"

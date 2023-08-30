@@ -24,7 +24,7 @@ def run(input_board: str | None, solver, validator, max_solutions: int = 1):
         input_board = _get_input()
     cleaned_input_board = _clean_and_validate(input_board, validator)
     solved_boards = solver.solve_sudoku(
-        cleaned_input_board, max_solutions, validator.validate_solved_board
+        cleaned_input_board, validator.validate_solved_board, max_solutions
     )
     _display_animated(cleaned_input_board, solved_boards[0])
 

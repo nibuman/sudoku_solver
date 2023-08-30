@@ -8,7 +8,7 @@ def run(input_board: str | None, solver, validator, max_solutions: int = 1):
     print("Input board:")
     _display_board(cleaned_input_board)
     solved_boards = solver.solve_sudoku(
-        cleaned_input_board, max_solutions, validator.validate_solved_board
+        cleaned_input_board, validator.validate_solved_board, max_solutions
     )
     _display_all_solutions(solved_boards)
 

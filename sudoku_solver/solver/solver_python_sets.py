@@ -143,7 +143,6 @@ class SudokuSolver(api.ABCSolver):
                     self.update_alg2(pos, vals)
                 case _:
                     raise TypeError
-
         return changed or options
 
     def alg2(self) -> bool:
@@ -187,12 +186,13 @@ class SudokuSolver(api.ABCSolver):
         )
 
     def solve_sudoku(
-        self, board: str, max_solutions: int = 1, completed_board_validator=None
+        self,
+        board: str,
+        completed_board_validator: Callable[[str], bool],
+        max_solutions: int = 1,
     ) -> list[str]:
         """Try to solve any Sudoku board using 3 algorithms, alg1, alg2, and alg3"""
         self.board = list(board)
-        if not completed_board_validator:
-            completed_board_validator = lambda board: True
         while len(self.valid_solutions) < max_solutions:
             if "0" not in self.board and completed_board_validator("".join(self.board)):
                 self.valid_solutions.append("".join(self.board))
