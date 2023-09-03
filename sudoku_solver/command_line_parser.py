@@ -53,6 +53,5 @@ def parse_commandline_args():
         help="maximum number of solutions to find",
         action="store",
         type=int,
-        default=1,
     )
     return parser.parse_args()

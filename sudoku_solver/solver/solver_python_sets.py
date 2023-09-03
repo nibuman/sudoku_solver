@@ -223,3 +223,6 @@ class SudokuSolver(api.ABCSolver):
                 break
 
         return self.valid_solutions
+
+
+solve = SudokuSolver()
