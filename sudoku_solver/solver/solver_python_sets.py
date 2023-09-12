@@ -194,7 +194,12 @@ class SudokuSolver(api.ABCSolver):
         """Try to solve any Sudoku board using 3 algorithms, alg1, alg2, and alg3"""
         self.board = list(board)
         while len(self.valid_solutions) < max_solutions:
-            if "0" not in self.board and completed_board_validator("".join(self.board)):
+            # TODO: having to check for duplicate solutions - should not happen!
+            if (
+                "0" not in self.board
+                and completed_board_validator("".join(self.board))
+                and "".join(self.board) not in self.valid_solutions
+            ):
                 self.valid_solutions.append("".join(self.board))
                 if not self.try_next_board_option():
                     break
