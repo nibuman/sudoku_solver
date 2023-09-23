@@ -2,6 +2,11 @@ import pytest
 from sudoku_solver import data, validator
 from sudoku_solver.solver import solver_python_sets
 
+DIGITS_1_9 = {str(n) for n in range(1, 10)}
+SINGLE_SOLUTION_PUZZLES = data.valid_sudoku_puzzles()
+STANDARD_VALID_INPUT = SINGLE_SOLUTION_PUZZLES[0].question
+STANDARD_VALID_SOLVED = SINGLE_SOLUTION_PUZZLES[0].answers[0]
+
 
 @pytest.fixture
 def solver():
@@ -9,28 +14,8 @@ def solver():
 
 
 @pytest.fixture
-def single_solution_puzzles():
-    return data.valid_sudoku_puzzles()
-
-
-@pytest.fixture
 def completed_board_validator():
     return validator.validate_solved_board
-
-
-@pytest.fixture
-def standard_valid_input(single_solution_puzzles):
-    return single_solution_puzzles[0].question
-
-
-@pytest.fixture
-def standard_valid_solved(single_solution_puzzles):
-    return single_solution_puzzles[0].answers[0]
-
-
-@pytest.fixture
-def digits_1_9():
-    return {str(n) for n in range(1, 10)}
 
 
 @pytest.mark.parametrize(
@@ -55,21 +40,14 @@ def test_get_index(position, expected_answer):
         (80, {"5", "0", "1", "3"}),
     ],
 )
-def test_get_row(
-    position,
-    expected_answer,
-    standard_valid_input,
-    standard_valid_solved,
-    solver,
-    digits_1_9,
-):
-    solver.board = standard_valid_input
+def test_get_row(position, expected_answer, solver):
+    solver.board = STANDARD_VALID_INPUT
     answer = solver.get_row(position)
     assert answer == expected_answer
 
-    solver.board = standard_valid_solved
+    solver.board = STANDARD_VALID_SOLVED
     answer = solver.get_row(position)
-    assert answer == digits_1_9
+    assert answer == DIGITS_1_9
 
 
 @pytest.mark.parametrize(
@@ -78,21 +56,14 @@ def test_get_row(
         (1, {"0"}),
     ],
 )
-def test_get_col(
-    position,
-    expected_answer,
-    standard_valid_input,
-    standard_valid_solved,
-    solver,
-    digits_1_9,
-):
-    solver.board = standard_valid_input
+def test_get_col(position, expected_answer, solver):
+    solver.board = STANDARD_VALID_INPUT
     answer = solver.get_col(position)
     assert answer == expected_answer
 
-    solver.board = standard_valid_solved
+    solver.board = STANDARD_VALID_SOLVED
     answer = solver.get_col(position)
-    assert answer == digits_1_9
+    assert answer == DIGITS_1_9
 
 
 @pytest.mark.parametrize(
@@ -106,29 +77,20 @@ def test_get_col(
         (80, {"5", "0", "9", "3"}),
     ],
 )
-def test_get_sqr(
-    position,
-    expected_answer,
-    standard_valid_input,
-    standard_valid_solved,
-    solver,
-    digits_1_9,
-):
-    solver.board = standard_valid_input
+def test_get_sqr(position, expected_answer, solver):
+    solver.board = STANDARD_VALID_INPUT
     answer = solver.get_sqr(position)
     assert answer == expected_answer
 
-    solver.board = standard_valid_solved
+    solver.board = STANDARD_VALID_SOLVED
     answer = solver.get_sqr(position)
-    assert answer == digits_1_9
+    assert answer == DIGITS_1_9
 
 
 @pytest.mark.parametrize("puzzle_number", [0, 1, 2, 3, 4, 5, 6])
-def test_solve_sudoku(
-    puzzle_number, solver, single_solution_puzzles, completed_board_validator
-):
-    input_board = single_solution_puzzles[puzzle_number].question
-    expected_answer = single_solution_puzzles[puzzle_number].answers[0]
+def test_solve_sudoku(puzzle_number, solver, completed_board_validator):
+    input_board = SINGLE_SOLUTION_PUZZLES[puzzle_number].question
+    expected_answer = SINGLE_SOLUTION_PUZZLES[puzzle_number].answers[0]
     # Test with the built in validator and max_solution set to 1
     answer = solver.solve_sudoku(input_board, completed_board_validator, 1)[0]
     assert answer == expected_answer
@@ -146,23 +108,21 @@ def test_solve_sudoku(
         6,
     ],
 )
-def test_solve_sudoku_no_validator(puzzle_number, solver, single_solution_puzzles):
+def test_solve_sudoku_no_validator(puzzle_number, solver):
     # Now test the same puzzle but with a validator that returns True
     # without checking...
-    input_board = single_solution_puzzles[puzzle_number].question
-    expected_answer = single_solution_puzzles[puzzle_number].answers[0]
+    input_board = SINGLE_SOLUTION_PUZZLES[puzzle_number].question
+    expected_answer = SINGLE_SOLUTION_PUZZLES[puzzle_number].answers[0]
     answer = solver.solve_sudoku(input_board, lambda _: True, 1)[0]
     assert answer == expected_answer
 
 
 @pytest.mark.parametrize("puzzle_number", [0, 1, 2, 3, 4, 5, 6])
-def test_solve_sudoku_single_answer(
-    puzzle_number, solver, single_solution_puzzles, completed_board_validator
-):
+def test_solve_sudoku_single_answer(puzzle_number, solver, completed_board_validator):
     # Now test the same puzzle but with a validator that returns True
     # without checking...
-    input_board = single_solution_puzzles[puzzle_number].question
-    expected_answer = single_solution_puzzles[puzzle_number].answers[0]
+    input_board = SINGLE_SOLUTION_PUZZLES[puzzle_number].question
+    expected_answer = SINGLE_SOLUTION_PUZZLES[puzzle_number].answers[0]
     # Test with the built in validator and max_solution set to 2
     answers = solver.solve_sudoku(input_board, completed_board_validator, 2)
     assert answers[0] == expected_answer

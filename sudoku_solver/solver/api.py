@@ -1,16 +1,19 @@
 from abc import abstractmethod, ABC
 from typing import Callable
 
-SudokuBoard = list[str]
+SudokuBoard = str
 
 
 class ABCSolver(ABC):
     @abstractmethod
-    def __init__(self, board: str) -> None:
+    def __init__(self) -> None:
         pass
 
     @abstractmethod
     def solve_sudoku(
-        self, max_solutions: int = 1, validator: Callable | None = None
+        self,
+        board: str,
+        completed_board_validator: Callable[[SudokuBoard], bool],
+        max_solutions: int,
     ) -> list[SudokuBoard]:
         pass

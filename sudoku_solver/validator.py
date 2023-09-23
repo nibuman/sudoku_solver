@@ -1,5 +1,4 @@
 from typing import Callable
-import logging
 
 
 DIGITS_1_TO_9 = {str(n) for n in range(1, 10)}

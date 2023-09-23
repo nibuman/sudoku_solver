@@ -4,7 +4,6 @@ from typing import Callable
 
 from sudoku_solver.solver import api
 
-SudokuBoard = list[str]
 DigitsInPosition = set[str]
 DigitsInPositions = list[DigitsInPosition]
 
@@ -29,7 +28,7 @@ class SudokuSolver(api.ABCSolver):
     DIGITS_0_TO_9 = {str(n) for n in range(0, 10)}
 
     def __init__(self) -> None:
-        self.guess_stack: list[SudokuBoard] = []
+        self.guess_stack: list[list[str]] = []
         self.initialise_available_pos()
         self.valid_solutions: list[str] = []
 
@@ -158,7 +157,7 @@ class SudokuSolver(api.ABCSolver):
                     changed = True
         return changed
 
-    def generate_test_board(self, position: int, number: str) -> SudokuBoard:
+    def generate_test_board(self, position: int, number: str) -> list[str]:
         """Creates a new sudoku board by putting a digit into one of the free
         positions"""
         test_board = self.board.copy()
@@ -187,7 +186,7 @@ class SudokuSolver(api.ABCSolver):
 
     def solve_sudoku(
         self,
-        board: str,
+        board: api.SudokuBoard,
         completed_board_validator: Callable[[str], bool],
         max_solutions: int = 1,
     ) -> list[str]:

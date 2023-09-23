@@ -9,17 +9,22 @@ class TestSudoku(NamedTuple):
 
 
 def valid_sudoku_question(puzzle_num: int) -> str:
-    """Retrieves the test Sudoku boards from the config file"""
+    """Retrieves the test Sudoku boards from the data file"""
     return valid_sudoku_puzzles()[puzzle_num].question
 
 
 def valid_sudoku_puzzles() -> list[TestSudoku]:
-    """Retrieves the test Sudoku boards from the config file"""
+    """Retrieves the test Sudoku boards from the data file"""
     return _get_sudoku_puzzles("single_solution_puzzles")
 
 
+def invalid_sudoku_puzzles() -> list[TestSudoku]:
+    """Retrieves a list of invalid completed boards from the data file"""
+    return _get_sudoku_puzzles("invalid_boards")
+
+
 def multiple_solution_puzzles() -> list[TestSudoku]:
-    """Retrieves the test Sudoku boards from the config file"""
+    """Retrieves the test Sudoku boards from the data file"""
     return _get_sudoku_puzzles("multiple_solution_puzzles")
 
 
