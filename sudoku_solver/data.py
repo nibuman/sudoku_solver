@@ -1,3 +1,17 @@
+"""Loads Sudoku puzzles from the data file.
+
+Data file contains various Sudoku puzzle inputs and answers
+including puzzles with a single solution, multiple solutions,
+and invalid boards. 'puzzles' are returned as a list of NamedTuple,
+each with a single input board (question) and a list of solutions (answers),
+even if there's only 1 solution.
+
+Typical usage example:
+    puzzle_num = 0
+    input_board = data.valid_sudoku_puzzles()[puzzle_num].question
+    expected_solution = data.valid_sudoku_puzzles()[puzzle_num].answers[0]
+"""
+
 import json
 from typing import NamedTuple
 from sudoku_solver import config
@@ -37,6 +51,6 @@ def _get_sudoku_puzzles(category: str) -> list[TestSudoku]:
 
 
 def _load_data():
-    with open(config.get_filepath("data"), "r") as f:
+    with open(config.get_filepaths().data_file, "r") as f:
         config_data = json.load(f)
     return config_data

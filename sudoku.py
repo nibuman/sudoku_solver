@@ -8,7 +8,7 @@ DEFAULT_SETTINGS = config.get_defaults()
 def main(test_sudoku=None):
     args = command_line_parser.parse_commandline_args()
     logging.basicConfig(
-        filename=config.get_filepath("log"),
+        filename=config.get_filepaths().log_file,
         filemode="w",
         format="%(asctime)s - %(levelname)s - %(message)s",
         level=logging.INFO,
@@ -20,7 +20,7 @@ def main(test_sudoku=None):
     # display the available plugins
     if args.plugin_list:
         plugins.list_plugins()
-        exit()
+        exit()                
     # Choose input
     if args.board_preset is not None:  # test needed as int(0) is a valid preset
         sudoku_input = data.valid_sudoku_question(args.board_preset)

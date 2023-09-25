@@ -1,3 +1,12 @@
+"""Discovers and loads plugins.
+
+Types of plugins are defined in the config file. This module looks in the plugin directory
+for any files that are prefixed with the plugin type, and can specific plugins as modules.
+
+Typical usage example:
+    solver = import_plugin("solver", "solver_python_sets"
+"""
+
 import importlib
 import importlib.util
 import pkgutil
@@ -12,6 +21,7 @@ PARENT_DIRECTORY = "sudoku_solver"
 
 
 def list_plugins() -> None:
+    """Prints a list of available plugins to the terminal"""
     print("Available plugins:")
     installed_plugins = get_plugins()
     for plugin_type in installed_plugins:
@@ -21,6 +31,11 @@ def list_plugins() -> None:
 
 
 def import_plugin(plugin_type: str, plugin_name: str) -> ModuleType:
+    """Returns the plugin as a module
+
+    Usage:
+        solver = import_plugin("solver", "solver_python_sets")
+    """
     return importlib.import_module(
         f"{PARENT_DIRECTORY}.{plugin_type}.{PLUGIN_SETTINGS[plugin_type].suffix}"
         f"{plugin_name}"
@@ -28,6 +43,7 @@ def import_plugin(plugin_type: str, plugin_name: str) -> ModuleType:
 
 
 def get_plugins() -> Dict[str, list[str]]:
+    """Returns a dict of the available plugins of the form {plugin_type: [plugin_name1, plugin_name2, ...]}"""
     plugins: Dict[str, list[str]] = {}
     for plugin_type in PLUGIN_TYPES:
         plugin_suffix = PLUGIN_SETTINGS[plugin_type].suffix

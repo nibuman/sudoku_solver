@@ -25,10 +25,10 @@ def test_get_all_squares():
 
 def test_only_valid_digits():
     board = "".join([str(row_num) for row_num in range(9) for _ in range(9)])
-    assert validator._only_valid_digits(board, DIGITS_0_9)
+    assert validator._only_digits_0_9(board)
 
     invalid_board = f"{board[0:80]}a"
-    assert not validator._only_valid_digits(invalid_board, DIGITS_0_9)
+    assert not validator._only_digits_0_9(invalid_board)
 
 
 @pytest.mark.parametrize(
@@ -60,8 +60,14 @@ def test_validate_input_board(board, expected_answer):
         ("1" * 81, False),
         (STANDARD_VALID_SOLVED, True),
         (INVALID_BOARD_SOLVED, False),
+        (STANDARD_VALID_SOLVED[:80], False),
     ],
-    ids=["ones", "board 0", "invalid board"],
+    ids=["ones", "board 0", "invalid board", "short board"],
 )
 def test_validate_solved_board(board, expected_answer):
     assert validator.validate_solved_board(board) == expected_answer
+
+
+def test_clean_strings():
+    assert validator.clean_string(STANDARD_VALID_INPUT) == STANDARD_VALID_INPUT
+    assert validator.clean_string("  %01af\df2/3'#45qq 6=789 ") == "0123456789"
