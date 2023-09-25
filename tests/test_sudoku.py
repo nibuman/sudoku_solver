@@ -1,6 +1,5 @@
 from sudoku_solver import data
 import pytest
-import sudoku
 import subprocess
 
 STANDARD_VALID_SOLVED = data.valid_sudoku_puzzles()[0].answers[0]
