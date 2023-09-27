@@ -1,9 +1,12 @@
 [build-system]
-requires      = ["setuptools>=61.0.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "sudoku-solver"
 version = "1.0.0"
 description = "Solve Sudoku puzzles"
 readme = "README.md"
+
+[project.scripts]
+sudokusolve = "sudoku_solver.__main__:main"

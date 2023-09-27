@@ -1,8 +1,6 @@
-from sudoku_solver import data
+from sudoku_solver import data, __main__
 import pytest
 import subprocess
-
-STANDARD_VALID_SOLVED = data.valid_sudoku_puzzles()[0].answers[0]
 
 
 def puzzle_solution(puzzle_num):
@@ -15,7 +13,13 @@ def puzzle_solution(puzzle_num):
 )
 def test_main(puzzle_number, expected_answer, capsys):
     captured = subprocess.run(
-        ["python3", "sudoku.py", "-b", str(puzzle_number), "-u", "unformatted_CLI"],
+        [
+            "sudokusolve",
+            "-b",
+            str(puzzle_number),
+            "-u",
+            "unformatted_CLI",
+        ],
         capture_output=True,
         text=True,
     )

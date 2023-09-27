@@ -1,3 +1,6 @@
+import os
+
+os.environ["KIVY_NO_ARGS"] = "1"
 from kivy.app import App
 from kivy.uix.button import Button
 from kivy.uix.boxlayout import BoxLayout
@@ -8,11 +11,13 @@ from kivy.properties import NumericProperty
 from kivy.uix.spinner import Spinner
 from kivy.uix.popup import Popup
 import json
-from sudoku_solver.solver.sudoku_solver import SudokuSolver
 
 sudoku_board = [0] * 81
 current_pos = None
 sudoku_buttons = [None] * 81
+solver = None
+validator = None
+max_solutions = 1
 
 
 class AppLayout(BoxLayout):
@@ -31,27 +36,19 @@ class AppControls(BoxLayout):
 
         sudoku_board = [0] * 81
 
-    def load_preset(self):
-        with open("./sudoku_data.json", "r") as f:
-            config_data = json.load(f)
-            sudoku_input = config_data["sudoku_puzzle"][0]["question"]
-            for num, btn in zip(sudoku_input, sudoku_buttons):
-                if int(num):
-                    # btn.color = (0, 1, 0, 1)
-                    btn.color = "red"
-                    btn.text = num
-                else:
-                    btn.text = " "
+    def quit(self):
+        exit()
 
     def solve(self):
         sudoku_input = "".join(
             [btn.text if btn.text != " " else "0" for btn in sudoku_buttons]
         )
 
-        solver = SudokuSolver(sudoku_input)
-        solved_board = solver.solve_sudoku()
+        solved_board = solver.solve_sudoku(
+            sudoku_board, validator.validate_solved_board, max_solutions
+        )
         for input_num, solve_num, btn in zip(
-            sudoku_input, solved_board, sudoku_buttons
+            sudoku_input, solved_board[0], sudoku_buttons
         ):
             if int(input_num):
                 btn.color = "red"
@@ -117,11 +114,26 @@ class SudokuApp(App):
                     + s_grid % 3
                 )
                 btn = SudokuButton(text=" ", position=pos)
+                if int(sudoku_board[pos]):
+                    # btn.color = (0, 1, 0, 1)
+                    btn.color = "red"
+                    btn.text = sudoku_board[pos]
                 sudoku_buttons[pos] = btn
                 small_grid.add_widget(btn)
             large_grid.add_widget(small_grid)
         thisLayout.add_widget(large_grid)
         return thisLayout
+
+
+def run(input_board: str | None, _solver, _validator, _max_solutions: int = 1):
+    global sudoku_board, solver, validator, max_solutions
+    sudoku_board = list(input_board)
+    solver = _solver
+    validator = _validator
+    max_solutions = _max_solutions
+
+    app = SudokuApp()
+    app.run()
 
 
 if __name__ == "__main__":

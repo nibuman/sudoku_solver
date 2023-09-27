@@ -1,4 +1,5 @@
 import pytest
+
 from sudoku_solver import validator, data
 
 DIGITS_1_9 = {str(n) for n in range(1, 10)}
