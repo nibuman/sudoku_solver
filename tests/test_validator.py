@@ -1,6 +1,6 @@
 import pytest
 
-from sudoku_solver import validator, data
+from sudoku_solver import validator, data, __main__
 
 DIGITS_1_9 = {str(n) for n in range(1, 10)}
 DIGITS_0_9 = {str(n) for n in range(10)}

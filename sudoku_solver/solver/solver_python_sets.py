@@ -3,6 +3,7 @@ from itertools import chain
 from typing import Callable
 
 from sudoku_solver.solver import api
+from sudoku_solver import __main__
 
 DigitsInPosition = set[str]
 DigitsInPositions = list[DigitsInPosition]
