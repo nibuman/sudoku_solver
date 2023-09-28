@@ -1,4 +1,4 @@
-from sudoku_solver import data, __main__
+from sudoku_solver import __main__, data
 import pytest
 import subprocess
 

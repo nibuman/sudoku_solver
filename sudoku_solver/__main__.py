@@ -1,31 +1,21 @@
 import logging
 
 from sudoku_solver import plugins, validator, command_line_parser, config, data
-import os
 
-abspath = os.path.abspath(__file__)
-dname = os.path.dirname(abspath)
-parent_dir, _ = os.path.split(dname)
-config.parent_directory = parent_dir
-os.chdir(parent_dir)
-
-
-
-DEFAULT_SETTINGS = config.get_defaults()
+config.initialise(__file__)
 
 
 def main(test_sudoku=None):
-
     args = command_line_parser.parse_commandline_args()
     logging.basicConfig(
-        filename=config.get_filepaths().log_file,
+        filename=config.filepaths.log_file,
         filemode="w",
         format="%(asctime)s - %(levelname)s - %(message)s",
         level=logging.INFO,
     )
 
     logging.info(f"Started. {args=}")
-    logging.info(f"{DEFAULT_SETTINGS=}")
+    logging.info(f"{config.defaults=}")
 
     # display the available plugins
     if args.plugin_list:
@@ -42,14 +32,14 @@ def main(test_sudoku=None):
         sudoku_input = ""
     logging.info(f"Using input board: {sudoku_input}")
     # maximum number of solutions
-    max_results = args.max_results or DEFAULT_SETTINGS.max_solutions
+    max_results = args.max_results or config.defaults.max_solutions
     logging.info(f"{max_results=}")
     # import user interface
-    interface_name = args.user_interface or DEFAULT_SETTINGS.ui
+    interface_name = args.user_interface or config.defaults.ui
     ui = plugins.import_plugin("ui", interface_name)
     logging.info(f"Using user-interface: {ui.__name__}")
     # import solver
-    solver_name = args.solver or DEFAULT_SETTINGS.solver
+    solver_name = args.solver or config.defaults.solver
     solver = plugins.import_plugin("solver", solver_name)
     logging.info(f"Using solver: {solver.__name__}")
     # run the program

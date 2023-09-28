@@ -6,8 +6,8 @@ solver = "python_sets"
 max_solutions = 1
 
 [filepaths]
-data = "./data/sudoku_data.json"
-log = "./data/sudoku_solver.log"
+data = "data/sudoku_data.json"
+log = "data/sudoku_solver.log"
 
 [plugins]
 
@@ -17,7 +17,7 @@ suffix = "ui_"
 entry_point = "run"
 
 [plugins.solver]
-description = "plugin that solves sudoku puzzles"
+description = "solver engine plugin"
 suffix = "solver_"
 entry_point = "solve_sudoku"
 
