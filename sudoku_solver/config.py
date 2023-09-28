@@ -16,6 +16,7 @@ from typing import Dict, NamedTuple
 PATH_TO_CONFIG_FILE = "data/config.toml"
 parent_directory = ""
 
+
 class DefaultSettings(NamedTuple):
     ui: str
     solver: str
@@ -66,5 +67,3 @@ def _read_config() -> Dict:
     with open(f"{parent_directory}/{PATH_TO_CONFIG_FILE}", "rb") as f:
         data = tomli.load(f)
     return data
-
-

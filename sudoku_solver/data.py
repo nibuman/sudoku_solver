@@ -52,5 +52,5 @@ def _get_sudoku_puzzles(category: str) -> list[TestSudoku]:
 
 def _load_data():
     with open(config.get_filepaths().data_file, "r") as f:
-        config_data = json.load(f)
-    return config_data
+        data = json.load(f)
+    return data
