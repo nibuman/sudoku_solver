@@ -13,11 +13,11 @@ log = "data/sudoku_solver.log"
 
 [plugins.ui]
 description = "user interface plugin"
-suffix = "ui_"
+prefix = "ui_"
 entry_point = "run"
 
 [plugins.solver]
 description = "solver engine plugin"
-suffix = "solver_"
+prefix = "solver_"
 entry_point = "solve_sudoku"
 

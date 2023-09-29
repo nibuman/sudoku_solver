@@ -11,8 +11,8 @@ Typical usage example:
   default_solver = config.get_defaults().solver
 """
 import tomli
-import os
 from typing import Dict, NamedTuple
+from pathlib import Path
 
 PATH_TO_CONFIG_FILE = "data/config.toml"
 
@@ -25,36 +25,29 @@ class DefaultSettings(NamedTuple):
 
 class PluginSettings(NamedTuple):
     description: str
-    suffix: str
+    prefix: str
     entry_point: str
 
 
 class PathSettings(NamedTuple):
-    parent_directory: str
-    log_file: str
-    data_file: str
+    parent_directory: Path
+    log_file: Path
+    data_file: Path
 
 
-defaults = DefaultSettings(None, None, None)
-plugins = PluginSettings(None, None, None)
-filepaths = PathSettings(None, None, None)
-_config_data = None
+defaults = DefaultSettings("", "", 1)
+plugins = {}
+filepaths = PathSettings(Path(), Path(), Path())
+_config_data = {}
 
 
-def initialise(main_file: str):
+def initialise():
     global defaults, plugins, filepaths, _config_data
-    parent_directory = _get_parent_directory(main_file)
+    parent_directory = Path(__file__).parents[1]
     _config_data = _read_config(parent_directory)
     filepaths = _get_filepaths(parent_directory)
     defaults = _get_defaults()
     plugins = _get_plugins()
-
-
-def _get_parent_directory(main_file: str):
-    absolute_path = os.path.abspath(main_file)
-    directory_name = os.path.dirname(absolute_path)
-    parent_directory, _ = os.path.split(directory_name)
-    return parent_directory
 
 
 def _get_defaults() -> DefaultSettings:
@@ -70,22 +63,24 @@ def _get_plugins() -> Dict[str, PluginSettings]:
     for plugin in _config_data["plugins"]:
         plugins[plugin] = PluginSettings(
             description=_config_data["plugins"][plugin]["description"],
-            suffix=_config_data["plugins"][plugin]["suffix"],
+            prefix=_config_data["plugins"][plugin]["prefix"],
             entry_point=_config_data["plugins"][plugin]["entry_point"],
         )
     return plugins
 
 
-def _get_filepaths(parent_directory: str):
-    data = _read_config(parent_directory)
+def _get_filepaths(parent_directory: Path):
     return PathSettings(
         parent_directory=parent_directory,
-        log_file=f"{parent_directory}/{_config_data['filepaths']['log']}",
-        data_file=f"{parent_directory}/{_config_data['filepaths']['data']}",
+        log_file=parent_directory / _config_data["filepaths"]["log"],
+        data_file=parent_directory / _config_data["filepaths"]["data"],
     )
 
 
-def _read_config(parent_directory: str) -> Dict:
-    with open(f"{parent_directory}/{PATH_TO_CONFIG_FILE}", "rb") as f:
+def _read_config(parent_directory: Path) -> Dict:
+    with open(parent_directory / PATH_TO_CONFIG_FILE, "rb") as f:
         data = tomli.load(f)
     return data
+
+
+initialise()

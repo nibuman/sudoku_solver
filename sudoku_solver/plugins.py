@@ -15,8 +15,6 @@ from types import ModuleType
 from sudoku_solver import config
 
 
-
-
 def list_plugins() -> None:
     """Prints a list of available plugins to the terminal"""
     INSTALLED_PLUGINS = find_available_plugins()
@@ -34,7 +32,7 @@ def import_plugin(plugin_type: str, plugin_name: str) -> ModuleType:
         solver = import_plugin("solver", "solver_python_sets")
     """
     return importlib.import_module(
-        f"sudoku_solver.{plugin_type}.{config.plugins[plugin_type].suffix}"
+        f"sudoku_solver.{plugin_type}.{config.plugins[plugin_type].prefix}"
         f"{plugin_name}"
     )
 
@@ -44,10 +42,12 @@ def find_available_plugins() -> Dict[str, list[str]]:
     plugins: Dict[str, list[str]] = {}
     PLUGIN_TYPES = tuple(config.plugins.keys())
     for plugin_type in PLUGIN_TYPES:
-        plugin_suffix = config.plugins[plugin_type].suffix
-        plugin_path = f"{config.filepaths.parent_directory}/sudoku_solver/{plugin_type}/"
+        plugin_prefix = config.plugins[plugin_type].prefix
+        plugin_path = (
+            f"{config.filepaths.parent_directory}/sudoku_solver/{plugin_type}/"
+        )
         for finder, name, ispkg in pkgutil.iter_modules(path=[plugin_path]):
-            if name.startswith(plugin_suffix):
+            if name.startswith(plugin_prefix):
                 try:
                     plugins[plugin_type].append(_strip_prefix(name, plugin_type))
                 except KeyError:
