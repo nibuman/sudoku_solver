@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "sudoku-solver"
+name = "sudokusolve"
 version = "1.0.0"
 description = "Solve Sudoku puzzles"
 readme = "README.md"
@@ -16,4 +16,4 @@ classifiers = [
 ]
 
 [project.scripts]
-sudokusolve = "sudoku_solver.__main__:main"
+sudokusolve = "sudokusolve.__main__:main"

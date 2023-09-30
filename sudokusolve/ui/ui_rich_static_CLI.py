@@ -4,7 +4,7 @@ from rich.panel import Panel
 from rich.align import Align
 from rich.layout import Layout
 
-from sudoku_solver.ui import rich_functions
+from sudokusolve.ui import rich_functions
 
 theme = Theme(
     {

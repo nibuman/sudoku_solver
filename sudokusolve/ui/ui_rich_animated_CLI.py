@@ -6,7 +6,7 @@ from rich.layout import Layout
 from rich.live import Live
 import time
 import random
-from sudoku_solver.ui import rich_functions
+from sudokusolve.ui import rich_functions
 
 theme = Theme(
     {

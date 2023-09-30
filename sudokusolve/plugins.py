@@ -12,7 +12,7 @@ import importlib.util
 import pkgutil
 from typing import Dict
 from types import ModuleType
-from sudoku_solver import config
+from sudokusolve import config
 
 
 def list_plugins() -> None:
@@ -32,7 +32,7 @@ def import_plugin(plugin_type: str, plugin_name: str) -> ModuleType:
         solver = import_plugin("solver", "solver_python_sets")
     """
     return importlib.import_module(
-        f"sudoku_solver.{plugin_type}.{config.plugins[plugin_type].prefix}"
+        f"sudokusolve.{plugin_type}.{config.plugins[plugin_type].prefix}"
         f"{plugin_name}"
     )
 
@@ -43,9 +43,7 @@ def find_available_plugins() -> Dict[str, list[str]]:
     PLUGIN_TYPES = tuple(config.plugins.keys())
     for plugin_type in PLUGIN_TYPES:
         plugin_prefix = config.plugins[plugin_type].prefix
-        plugin_path = (
-            f"{config.filepaths.parent_directory}/sudoku_solver/{plugin_type}/"
-        )
+        plugin_path = f"{config.filepaths.parent_directory}/{plugin_type}/"
         for finder, name, ispkg in pkgutil.iter_modules(path=[plugin_path]):
             if name.startswith(plugin_prefix):
                 try:

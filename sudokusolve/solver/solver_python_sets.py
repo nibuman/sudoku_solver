@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from itertools import chain
 from typing import Callable
 
-from sudoku_solver.solver import api
+from sudokusolve.solver import api
 
 
 DigitsInPosition = set[str]
