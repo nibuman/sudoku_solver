@@ -43,7 +43,7 @@ _config_data = {}
 
 def initialise():
     global defaults, plugins, filepaths, _config_data
-    parent_directory = Path(__file__).parents[1]
+    parent_directory = Path(__file__).parent
     _config_data = _read_config(parent_directory)
     filepaths = _get_filepaths(parent_directory)
     defaults = _get_defaults()
