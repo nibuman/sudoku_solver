@@ -12,7 +12,7 @@ from kivy.uix.spinner import Spinner
 from kivy.uix.popup import Popup
 import json
 
-sudoku_board = [0] * 81
+sudoku_board = ["0"] * 81
 current_pos = None
 sudoku_buttons = [None] * 81
 solver = None
@@ -127,7 +127,9 @@ class SudokuApp(App):
 
 def run(input_board: str | None, _solver, _validator, _max_solutions: int = 1):
     global sudoku_board, solver, validator, max_solutions
-    sudoku_board = list(input_board)
+    if input_board:
+        sudoku_board = list(input_board)
+
     solver = _solver
     validator = _validator
     max_solutions = _max_solutions
