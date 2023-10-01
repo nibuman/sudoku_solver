@@ -1,4 +1,4 @@
-from sudoku_solver import data, config
+from sudokusolve import data, config
 import pytest
 import subprocess
 
@@ -14,7 +14,8 @@ def puzzle_solution(puzzle_num):
 def test_main(puzzle_number, expected_answer, capsys):
     captured = subprocess.run(
         [
-            config.filepaths.parent_directory / "venv" / "bin" / "sudokusolve",
+            "python3",
+            config.filepaths.parent_directory,
             "-b",
             str(puzzle_number),
             "-u",

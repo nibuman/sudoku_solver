@@ -1,6 +1,6 @@
 import pytest
-from sudoku_solver import data, validator
-from sudoku_solver.solver import solver_python_sets
+from sudokusolve import data, validator
+from sudokusolve.solver import solver_python_sets
 
 DIGITS_1_9 = {str(n) for n in range(1, 10)}
 SINGLE_SOLUTION_PUZZLES = data.valid_sudoku_puzzles()
