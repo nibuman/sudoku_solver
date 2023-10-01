@@ -57,7 +57,9 @@ For testing, to save typing in long strings there are a number of built-in board
 
 ### GUI interface
 
-Plugins ending in 'GUI' will launch a graphical interface
+Plugins ending in 'GUI' will launch a graphical interface. A board or built-in board can be passed by the commandline as above, but it is not necessary.
+
+- `sudokusolve -u 'kivy_GUI'`  will launch a blank GUI
 
 ## Plugins
 

@@ -1,21 +1,33 @@
 #:kivy 2.1.0
+
             
 <AppLabel>:
     id:'title'
     text:'Sudoku Solver'
     size_hint: 1, 0.1
 
+<ControlButton@Button>:
+    background_normal:''
+    color: 0, 0, 0, 1
+    bold: True
+    canvas:
+        Color:
+            rgba: .5, .5, .5, 1
+        Line:
+            width: 2
+            rectangle: self.x, self.y, self.width, self.height
+
 <AppControls>:
     size_hint: 1, 0.2
     orientation:'horizontal'
     padding:10
-    Button:
+    ControlButton:
         text:"Solve"
         on_release: root.solve()
-    Button:
+    ControlButton:
         text:"Reset"
         on_release: root.reset_board()
-    Button:
+    ControlButton:
         text:"Quit"
         on_release: root.quit()
 
@@ -30,9 +42,18 @@
     padding:3
 
 <SudokuButton>:
-    color:0,0,0,1
+    background_normal:''
     size_hint:0.01, 0.01
+    bold: True
     on_release:root.print_number()
+    canvas.before:
+        Color:
+            rgba: .5, .5, .5, 1
+        Line:
+            width: 2
+            rectangle: self.x, self.y, self.width, self.height
+
+
 
 <MyLayout>:
     orientation:'vertical'
@@ -41,8 +62,18 @@
     AppLabel:
     AppControls:
 
+
 <NumberButton@Button>:
-    
+    background_normal:''
+    color: 0, 0, 0, 1
+    bold: True
+    canvas:
+        Color:
+            rgba: .5, .5, .5, 1
+        Line:
+            width: 2
+            rectangle: self.x, self.y, self.width, self.height
+
 
 <NumberEntry>:
     title:"Enter a number"
@@ -50,6 +81,9 @@
     BoxLayout:
         orientation:'vertical'
         Button:
+            background_normal:''
+            color: 0, 0, 0, 1
+            bold: True
             size_hint: 1,0.5
             text:'Clear'
             on_release:root.clear()

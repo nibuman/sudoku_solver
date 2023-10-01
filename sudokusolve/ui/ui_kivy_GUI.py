@@ -11,13 +11,19 @@ from kivy.properties import NumericProperty
 from kivy.uix.spinner import Spinner
 from kivy.uix.popup import Popup
 import json
+from enum import Enum
 
-sudoku_board = ["0"] * 81
+sudoku_input = ["0"] * 81
 current_pos = None
 sudoku_buttons = [None] * 81
 solver = None
 validator = None
 max_solutions = 1
+
+
+class colour(Enum):
+    INPUT_DIGIT = (1, 0, 0, 1)
+    SOLVED_DIGIT = (0, 0, 0, 1)
 
 
 class AppLayout(BoxLayout):
@@ -30,11 +36,11 @@ class AppLabel(Label):
 
 class AppControls(BoxLayout):
     def reset_board(self):
-        global sudoku_board
+        global sudoku_input
         for btn in sudoku_buttons:
             btn.text = " "
 
-        sudoku_board = [0] * 81
+        sudoku_input = ["0"] * 81
 
     def quit(self):
         exit()
@@ -44,17 +50,17 @@ class AppControls(BoxLayout):
             [btn.text if btn.text != " " else "0" for btn in sudoku_buttons]
         )
 
-        solved_board = solver.solve_sudoku(
-            sudoku_board, validator.validate_solved_board, max_solutions
+        solved_boards = solver.solve_sudoku(
+            sudoku_input, validator.validate_solved_board, max_solutions
         )
         for input_num, solve_num, btn in zip(
-            sudoku_input, solved_board[0], sudoku_buttons
+            sudoku_input, solved_boards[0], sudoku_buttons
         ):
             if int(input_num):
-                btn.color = "red"
+                btn.color = colour.INPUT_DIGIT.value
                 btn.text = solve_num
             else:
-                btn.color = "white"
+                btn.color = colour.SOLVED_DIGIT.value
                 btn.text = solve_num
 
 
@@ -86,13 +92,14 @@ class SudokuButton(Button):
 
 class NumberEntry(Popup):
     def select_number(self, text):
-        sudoku_board[current_pos.position] = int(text)
+        sudoku_input[current_pos.position] = text
 
-        print("".join([str(n) for n in sudoku_board]))
+        print("".join([str(n) for n in sudoku_input]))
         if text == "0":
             current_pos.text = " "
         else:
             current_pos.text = text
+            current_pos.color = colour.INPUT_DIGIT.value
         self.dismiss()
 
     def clear(self):
@@ -114,10 +121,10 @@ class SudokuApp(App):
                     + s_grid % 3
                 )
                 btn = SudokuButton(text=" ", position=pos)
-                if int(sudoku_board[pos]):
-                    # btn.color = (0, 1, 0, 1)
-                    btn.color = "red"
-                    btn.text = sudoku_board[pos]
+                if int(sudoku_input[pos]):
+                    btn.color = colour.INPUT_DIGIT.value
+                    # btn.color = "red"
+                    btn.text = sudoku_input[pos]
                 sudoku_buttons[pos] = btn
                 small_grid.add_widget(btn)
             large_grid.add_widget(small_grid)
@@ -126,13 +133,15 @@ class SudokuApp(App):
 
 
 def run(input_board: str | None, _solver, _validator, _max_solutions: int = 1):
-    global sudoku_board, solver, validator, max_solutions
-    if input_board:
-        sudoku_board = list(input_board)
+    global sudoku_input, solver, validator, max_solutions
 
     solver = _solver
     validator = _validator
     max_solutions = _max_solutions
+
+    cleaned_board = validator.clean_string(input_board)
+    if validator.validate_input_board(cleaned_board):
+        sudoku_input = list(cleaned_board)
 
     app = SudokuApp()
     app.run()
