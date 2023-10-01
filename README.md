@@ -22,18 +22,19 @@ For the command line interface, a string representing a Sudoku board is passed t
 
 The string must be contain all 81 digits of the board (where a blank space is represented by '0'), but can have any non-digit characters present as delimiters (such as ' ' or '-').
 
+|   |   |   |
 |---|---|---|
-|  3| 2 |6  |
-|9  |3 5|  1|
-|  1|8 6|4  |
+|..3|.2.|6..|
+|9..|3.5|..1|
+|..1|8.6|4..|
 |---|---|---|
-|  8|1 2|9  |
-|7  |   |  8|
-|  6|7 8|2  |
+|..8|1.2|9..|
+|7..|...|..8|
+|..6|7.8|2..|
 |---|---|---|
-|  2|6 9|5  |
-|8  |2 3|  9|
-|  5| 1 |3  |
+|..2|6.9|5..|
+|8..|2.3|..9|
+|..5|.1.|3..|
 |---|---|---|
 
 Would be represented by:
