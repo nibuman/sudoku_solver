@@ -10,8 +10,9 @@ Typical usage example:
 import importlib
 import importlib.util
 import pkgutil
-from typing import Dict
 from types import ModuleType
+from typing import Dict
+
 from sudokusolve import config
 
 

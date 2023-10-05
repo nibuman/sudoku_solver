@@ -10,9 +10,10 @@ Typical usage example:
   
   default_solver = config.get_defaults().solver
 """
-import tomli
-from typing import Dict, NamedTuple
 from pathlib import Path
+from typing import Dict, NamedTuple
+
+import tomli
 
 PATH_TO_CONFIG_FILE = "data/config.toml"
 

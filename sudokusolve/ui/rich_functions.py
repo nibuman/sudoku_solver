@@ -1,7 +1,7 @@
-from rich.table import Table
-from rich.columns import Columns
-from rich.align import Align
 from rich import box
+from rich.align import Align
+from rich.columns import Columns
+from rich.table import Table
 
 ALL_POSITIONS = set(range(81))
 

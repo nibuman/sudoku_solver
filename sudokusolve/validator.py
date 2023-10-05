@@ -15,7 +15,6 @@ Typical usage example:
 """
 from typing import Callable
 
-
 DIGITS_1_TO_9 = {str(n) for n in range(1, 10)}
 DIGITS_0_TO_9 = {str(n) for n in range(10)}
 

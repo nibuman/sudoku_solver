@@ -1,6 +1,6 @@
 import logging
 
-from sudokusolve import config, plugins, validator, command_line_parser, data
+from sudokusolve import command_line_parser, config, data, plugins, validator
 
 
 def main(test_sudoku=None):

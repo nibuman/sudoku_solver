@@ -4,7 +4,6 @@ from typing import Callable
 
 from sudokusolve.solver import api
 
-
 DigitsInPosition = set[str]
 DigitsInPositions = list[DigitsInPosition]
 

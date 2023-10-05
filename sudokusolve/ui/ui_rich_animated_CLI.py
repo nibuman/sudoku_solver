@@ -1,11 +1,13 @@
-from rich.console import Console
-from rich.theme import Theme
-from rich.panel import Panel
+import random
+import time
+
 from rich.align import Align
+from rich.console import Console
 from rich.layout import Layout
 from rich.live import Live
-import time
-import random
+from rich.panel import Panel
+from rich.theme import Theme
+
 from sudokusolve.ui import rich_functions
 
 theme = Theme(

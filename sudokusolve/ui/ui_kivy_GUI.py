@@ -1,17 +1,18 @@
 import os
 
 os.environ["KIVY_NO_ARGS"] = "1"
-from kivy.app import App
-from kivy.uix.button import Button
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.widget import Widget
-from kivy.uix.label import Label
-from kivy.properties import NumericProperty
-from kivy.uix.spinner import Spinner
-from kivy.uix.popup import Popup
 import json
 from enum import Enum
+
+from kivy.app import App
+from kivy.properties import NumericProperty
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.button import Button
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.label import Label
+from kivy.uix.popup import Popup
+from kivy.uix.spinner import Spinner
+from kivy.uix.widget import Widget
 
 sudoku_input = ["0"] * 81
 current_pos = None

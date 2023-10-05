@@ -14,6 +14,7 @@ Typical usage example:
 
 import json
 from typing import NamedTuple
+
 from sudokusolve import config
 
 
