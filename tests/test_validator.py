@@ -1,6 +1,6 @@
 import pytest
 
-from sudokusolve import validator, data, __main__
+from sudokusolve import data, validator
 
 DIGITS_1_9 = {str(n) for n in range(1, 10)}
 DIGITS_0_9 = {str(n) for n in range(10)}
@@ -71,4 +71,4 @@ def test_validate_solved_board(board, expected_answer):
 
 def test_clean_strings():
     assert validator.clean_string(STANDARD_VALID_INPUT) == STANDARD_VALID_INPUT
-    assert validator.clean_string("  %01af\df2/3'#45qq 6=789 ") == "0123456789"
+    assert validator.clean_string(r"  %01af\df2/3'#45qq 6=789 ") == "0123456789"

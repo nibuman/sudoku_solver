@@ -1,4 +1,5 @@
 import pytest
+
 from sudokusolve import data, validator
 from sudokusolve.solver import solver_python_sets
 

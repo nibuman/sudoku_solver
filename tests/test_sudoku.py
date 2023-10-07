@@ -1,6 +1,8 @@
-from sudokusolve import data, config
-import pytest
 import subprocess
+
+import pytest
+
+from sudokusolve import config, data
 
 
 def puzzle_solution(puzzle_num):

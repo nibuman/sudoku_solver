@@ -41,8 +41,9 @@ def validate_solved_board(board: str) -> bool:
     """Checks whether solved sudoku board is valid.
 
     Board must have 81 digits, exactly one of each digit in each row, column and square.
-    Needs lazy evaluation in generator as early evalution of _get_all_* functions will lead
-    to index error if _correct_number_of_digits not evaluated first.
+    Needs lazy evaluation in generator as early evalution of
+    _get_all_* functions will lead to index error if
+    _correct_number_of_digits not evaluated first.
     """
     return all(
         func(*args)
