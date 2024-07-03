@@ -13,6 +13,7 @@ Typical usage example:
     if validate_solved_board(my_solved_board):
         do other stuff
 """
+
 from typing import Callable
 
 DIGITS_1_TO_9 = {str(n) for n in range(1, 10)}

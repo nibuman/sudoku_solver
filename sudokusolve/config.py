@@ -7,13 +7,14 @@ options are visible and can be accessed using dot notation.
 Typical usage example:
 
   log_file_path = config.get_filepaths().log_file
-  
+
   default_solver = config.get_defaults().solver
 """
+
 from pathlib import Path
 from typing import Dict, NamedTuple
 
-import tomli
+import tomllib
 
 PATH_TO_CONFIG_FILE = "data/config.toml"
 
@@ -80,7 +81,7 @@ def _get_filepaths(parent_directory: Path):
 
 def _read_config(parent_directory: Path) -> Dict:
     with open(parent_directory / PATH_TO_CONFIG_FILE, "rb") as f:
-        data = tomli.load(f)
+        data = tomllib.load(f)
     return data
 
 
