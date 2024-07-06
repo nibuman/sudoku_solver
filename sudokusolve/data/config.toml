@@ -6,8 +6,8 @@ solver = "python_sets"
 max_solutions = 1
 
 [filepaths]
-data = "data/sudoku_data.json"
-log = "data/sudoku_solver.log"
+data_file = "data/sudoku_data.json"
+log_file = "data/sudoku_solver.log"
 
 [plugins]
 

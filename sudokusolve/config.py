@@ -37,45 +37,20 @@ class PathSettings(NamedTuple):
     data_file: Path
 
 
-defaults = DefaultSettings("", "", 1)
-plugins = {}
-filepaths = PathSettings(Path(), Path(), Path())
-_config_data = {}
+def _get_defaults(config_data: Dict) -> DefaultSettings:
+    return DefaultSettings(**config_data["defaults"])
 
 
-def initialise():
-    global defaults, plugins, filepaths, _config_data
-    parent_directory = Path(__file__).parent
-    _config_data = _read_config(parent_directory)
-    filepaths = _get_filepaths(parent_directory)
-    defaults = _get_defaults()
-    plugins = _get_plugins()
+def _get_plugins(config_data: Dict) -> Dict[str, PluginSettings]:
+    plugins = config_data["plugins"]
+    return {name: PluginSettings(**plugins[name]) for name in plugins}
 
 
-def _get_defaults() -> DefaultSettings:
-    return DefaultSettings(
-        ui=_config_data["defaults"]["ui"],
-        solver=_config_data["defaults"]["solver"],
-        max_solutions=_config_data["defaults"]["max_solutions"],
-    )
-
-
-def _get_plugins() -> Dict[str, PluginSettings]:
-    plugins = {}
-    for plugin in _config_data["plugins"]:
-        plugins[plugin] = PluginSettings(
-            description=_config_data["plugins"][plugin]["description"],
-            prefix=_config_data["plugins"][plugin]["prefix"],
-            entry_point=_config_data["plugins"][plugin]["entry_point"],
-        )
-    return plugins
-
-
-def _get_filepaths(parent_directory: Path):
+def _get_filepaths(config_data: Dict, parent_directory: Path):
     return PathSettings(
         parent_directory=parent_directory,
-        log_file=parent_directory / _config_data["filepaths"]["log"],
-        data_file=parent_directory / _config_data["filepaths"]["data"],
+        log_file=parent_directory / config_data["filepaths"]["log_file"],
+        data_file=parent_directory / config_data["filepaths"]["data_file"],
     )
 
 
@@ -85,4 +60,8 @@ def _read_config(parent_directory: Path) -> Dict:
     return data
 
 
-initialise()
+_parent_directory = Path(__file__).parent
+_config_data = _read_config(_parent_directory)
+defaults = _get_defaults(config_data=_config_data)
+filepaths = _get_filepaths(config_data=_config_data, parent_directory=_parent_directory)
+plugins = _get_plugins(config_data=_config_data)
