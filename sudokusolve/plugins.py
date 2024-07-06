@@ -52,11 +52,7 @@ def find_available_plugins() -> Dict[str, list[str]]:
         for finder, name, ispkg in pkgutil.iter_modules(path=[plugin_path]):
             if name.startswith(plugin_prefix):
                 try:
-                    plugins[plugin_type].append(_strip_prefix(name, plugin_type))
+                    plugins[plugin_type].append(name.removeprefix(plugin_prefix))
                 except KeyError:
-                    plugins[plugin_type] = [_strip_prefix(name, plugin_type)]
+                    plugins[plugin_type] = [name.removeprefix(plugin_prefix)]
     return plugins
-
-
-def _strip_prefix(plugin: str, plugintype) -> str:
-    return plugin.removeprefix(f"{plugintype}_")
