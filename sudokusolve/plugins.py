@@ -34,10 +34,8 @@ def import_plugin(plugin_type: str, plugin_name: str) -> ModuleType:
     Usage:
         solver = import_plugin("solver", "solver_python_sets")
     """
-    return importlib.import_module(
-        f"sudokusolve.{plugin_type}.{config.plugins[plugin_type].prefix}"
-        f"{plugin_name}"
-    )
+    prefix = config.plugins[plugin_type].prefix
+    return importlib.import_module(f"sudokusolve.{plugin_type}.{prefix}{plugin_name}")
 
 
 def find_available_plugins() -> Dict[str, list[str]]:
@@ -48,8 +46,8 @@ def find_available_plugins() -> Dict[str, list[str]]:
     PLUGIN_TYPES = tuple(config.plugins.keys())
     for plugin_type in PLUGIN_TYPES:
         plugin_prefix = config.plugins[plugin_type].prefix
-        plugin_path = f"{config.filepaths.parent_directory}/{plugin_type}/"
-        for finder, name, ispkg in pkgutil.iter_modules(path=[plugin_path]):
+        plugin_path = config.filepaths.parent_directory / plugin_type
+        for finder, name, ispkg in pkgutil.iter_modules(path=[str(plugin_path)]):
             if name.startswith(plugin_prefix):
                 try:
                     plugins[plugin_type].append(name.removeprefix(plugin_prefix))
