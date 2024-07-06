@@ -47,10 +47,13 @@ def find_available_plugins() -> Dict[str, list[str]]:
     for plugin_type in PLUGIN_TYPES:
         plugin_prefix = config.plugins[plugin_type].prefix
         plugin_path = config.filepaths.parent_directory / plugin_type
-        for finder, name, ispkg in pkgutil.iter_modules(path=[str(plugin_path)]):
-            if name.startswith(plugin_prefix):
+        for module in pkgutil.iter_modules(
+            path=[str(plugin_path)]
+        ):  # Note that path param takes strings not Path objects
+            if module.name.startswith(plugin_prefix):
+                module_name = module.name.removeprefix(plugin_prefix)
                 try:
-                    plugins[plugin_type].append(name.removeprefix(plugin_prefix))
+                    plugins[plugin_type].append(module_name)
                 except KeyError:
-                    plugins[plugin_type] = [name.removeprefix(plugin_prefix)]
+                    plugins[plugin_type] = [module_name]
     return plugins
