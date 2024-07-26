@@ -49,7 +49,7 @@ def find_available_plugins() -> Dict[str, list[str]]:
         plugin_path = config.filepaths.parent_directory / plugin_type
         for module in pkgutil.iter_modules(
             path=[str(plugin_path)]
-        ):  # Note that path param takes strings not Path objects
+        ):  # Note that path param takes paths as strings not Path objects
             if module.name.startswith(plugin_prefix):
                 module_name = module.name.removeprefix(plugin_prefix)
                 try:
