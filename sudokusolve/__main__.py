@@ -41,7 +41,7 @@ def main(test_sudoku=None):
     solver = plugins.import_plugin("solver", solver_name)
     logging.info(f"Using solver: {solver.__name__}")
     # run the program
-    ui.run(sudoku_input, solver.SudokuSolver(), validator, max_results)
+    ui.run(sudoku_input, solver.main(), validator, max_results)
 
 
 if __name__ == "__main__":

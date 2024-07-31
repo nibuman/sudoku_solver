@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from itertools import chain
 from typing import Callable
-
 from sudokusolve.solver import api
 
 DigitsInPosition = set[str]
@@ -229,4 +228,5 @@ class SudokuSolver(api.ABCSolver):
         return self.valid_solutions
 
 
-solve = SudokuSolver()
+def main():
+    return SudokuSolver()
