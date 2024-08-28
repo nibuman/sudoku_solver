@@ -190,6 +190,7 @@ class SudokuSolver(api.ABCSolver):
         max_solutions: int = 1,
     ) -> list[str]:
         """Try to solve any Sudoku board using 3 algorithms, alg1, alg2, and alg3"""
+        self.__init__()
         self.board = list(board)
         while len(self.valid_solutions) < max_solutions:
             # TODO: having to check for duplicate solutions - should not happen!
@@ -228,5 +229,4 @@ class SudokuSolver(api.ABCSolver):
         return self.valid_solutions
 
 
-def main():
-    return SudokuSolver()
+solve_sudoku = SudokuSolver().solve_sudoku
