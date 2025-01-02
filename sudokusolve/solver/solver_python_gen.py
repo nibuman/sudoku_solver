@@ -83,6 +83,13 @@ def substitute_board(board, substitutions: dict[int, str]):
             yield num
 
 
+def position_with_fewest_numbers(board):
+    return min(
+        filter(lambda x: len(x[1]) > 1, enumerate(available_number_gen(board))),
+        key=lambda x: len(x[1]),
+    )
+
+
 def solve_sudoku(
     board, completed_board_validator: Callable[[str], bool], max_solutions: int = 1
 ):
@@ -94,31 +101,22 @@ def solve_sudoku(
         substitutions = only_possible_numbers | only_position_in_rcs
         if substitutions:
             board = "".join(substitute_board(board, substitutions))
+            continue
         elif not any(unknown_positions_gen(board)) and completed_board_validator(board):
             solved_boards.append(board)
             if len(solved_boards) >= max_solutions:
                 break
-            try:
-                board = boards.pop()
-            except IndexError:
-                break
         else:
             try:
-                pos, numbers = min(
-                    filter(
-                        lambda x: len(x[1]) > 1, enumerate(available_number_gen(board))
-                    ),
-                    key=lambda x: len(x[1]),
+                pos, numbers = position_with_fewest_numbers(board)
+                substitions = [{pos: n} for n in numbers]
+                boards.extend(
+                    "".join(substitute_board(board, subs)) for subs in substitions
                 )
             except ValueError:
-                try:
-                    board = boards.pop()
-                    continue
-                except IndexError:
-                    break
-            substitions = [{pos: n} for n in numbers]
-            boards.extend(
-                "".join(substitute_board(board, subs)) for subs in substitions
-            )
+                pass
+        try:
             board = boards.pop()
+        except IndexError:
+            break
     return solved_boards

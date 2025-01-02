@@ -13,7 +13,7 @@ def puzzle_solution(puzzle_num):
     "puzzle_number, expected_answer",
     [(puzzle_num, puzzle_solution(puzzle_num)) for puzzle_num in range(7)],
 )
-def test_main(puzzle_number, expected_answer, capsys):
+def test_main(puzzle_number, expected_answer):
     captured = subprocess.run(
         [
             "python3",
